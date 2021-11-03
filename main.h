@@ -6,26 +6,9 @@
 #define GRID_HEIGHT 20
 #define GRID_WIDTH 20
 
-struct point{
-    int x,y;
-    bool operator==(point rhs){
-        return this->x == rhs.x && this->y == rhs.y;
-    }
-};
-
-class Item{
-public:
-    int id;
-    SDL_Rect rect;
-    SDL_Texture* item_texture;
-    point position;
-
-    Item(){
-        item_texture = NULL;
-        position = {0,0};
-        id = 0;
-    }
-};
+#include "item_ids.h"
+#include "item.h"
+#include "map.h"
 
 class Player{
 public:
@@ -42,11 +25,7 @@ public:
     }
 };
 
-enum ITEM_IDS{
-    ITEM_AIR = 0,
-    ITEM_WALL = 1,
-    ITEM_CHEST = 2,
-};
+
 
 class Root{
 public:
@@ -83,16 +62,48 @@ public:
     SDL_Color wall_color = {76, 49, 49, 255}; // Brown-ish red
 
     Player avatar;
-    Item* items;
+
+    World init_world;
+    Map* current_map = &init_world.bb;
 
     // Textures
     SDL_Texture* chest_texture;
+    SDL_Texture* totem_texture;
 
 public:
 
     Root() {
         Surf_Display = NULL;
         Running = true;
+    }
+
+    void SetItemPosition(Item &i, point pos){
+        i.position = pos;
+        i.rect.x = pos.x * grid_cell_size;
+        i.rect.y = pos.y * grid_cell_size;
+    }
+    
+    void InitItems(){
+        for(auto &i : current_map->item_list){
+            i.rect.w = grid_cell_size;
+            i.rect.h = grid_cell_size;
+            SetItemPosition(i, i.position);
+        }
+        for(auto &i : current_map->item_list){
+            switch(i.id){
+                case ITEM_AIR:
+                    break;
+                case ITEM_WALL:
+                    break;
+                case ITEM_CHEST:
+                    i.item_texture = chest_texture;
+                    break;
+                case ITEM_TOTEM:
+                    i.item_texture = totem_texture;
+                default:
+                    break;
+            }
+        }
     }
 
     bool OnInit(){
@@ -119,17 +130,8 @@ public:
         bmp_surf = SDL_LoadBMP("chest.bmp");
         chest_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
-        
-        items = new Item[grid_size];
-        
-        for(int i = 0; i < grid_size; i++){
-            /*
-            items[i].rect.x = grid_cell_size * items[i].position.x;
-            items[i].rect.y = grid_cell_size * items[i].position.y;
-            */
-            items[i].rect.w = grid_cell_size;
-            items[i].rect.h = grid_cell_size;
-        }
+        bmp_surf = SDL_LoadBMP("totem.bmp");
+        totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
         
         Inventory_Menu.h = (grid_cell_size * 5) + 40;
         Inventory_Menu.w = (grid_cell_size * 12) + 40;
@@ -156,10 +158,12 @@ public:
                         avatar.position.y -= 1;
                         grid_cursor.y -= grid_cell_size;
                     }
-                    else{
-                        // trigger load new map
+                    else if(current_map->GetNextMap('u') != nullptr){
+                        current_map = current_map->GetNextMap('u');
                         avatar.position.y = 19;
                         SYNC_POS();
+                        InitItems();
+                        SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_s:
@@ -168,9 +172,12 @@ public:
                         avatar.position.y += 1;
                         grid_cursor.y += grid_cell_size;
                     }
-                    else{
+                    else if(current_map->GetNextMap('d') != nullptr){
+                        current_map = current_map->GetNextMap('d');
                         avatar.position.y = 0;
                         SYNC_POS();
+                        InitItems();
+                        SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_a:
@@ -179,9 +186,12 @@ public:
                         avatar.position.x -= 1;
                         grid_cursor.x -= grid_cell_size;
                     }
-                    else{
+                    else if(current_map->GetNextMap('l') != nullptr){
+                        current_map = current_map->GetNextMap('l');
                         avatar.position.x = 19;
                         SYNC_POS();
+                        InitItems();
+                        SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_d:
@@ -190,9 +200,12 @@ public:
                         avatar.position.x += 1;
                         grid_cursor.x += grid_cell_size;
                     }
-                    else{
+                    else if(current_map->GetNextMap('r') != nullptr){
+                        current_map = current_map->GetNextMap('r');
                         avatar.position.x = 0;
                         SYNC_POS();
+                        InitItems();
+                        SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 }
@@ -213,9 +226,9 @@ public:
     }
 
     int OnItem(){
-        for(int i = 0; i < grid_size; i++){
-            if(avatar.position == items[i].position){
-                return items[i].id;
+        for(auto &i : current_map->item_list){
+            if(avatar.position == i.position){
+                return i.id;
             }
         }
         return 0;
@@ -240,9 +253,9 @@ public:
         }
         
         
-        for(int i = 0; i < grid_size; i++){
-            if(items[i].item_texture)
-            SDL_RenderCopy(renderer, items[i].item_texture, NULL, &items[i].rect);
+        for(auto &i : current_map->item_list){
+            if(i.item_texture)
+            SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
         }
         
 
@@ -259,28 +272,6 @@ public:
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &grid_cursor);
 
         SDL_RenderPresent(renderer);
-    }
-
-    void SetItemPosition(Item &i, point pos){
-        i.position = pos;
-        i.rect.x = pos.x * grid_cell_size;
-        i.rect.y = pos.y * grid_cell_size;
-    }
-    
-    void InitItems(){
-        for(int i = 0; i < grid_size; i++){
-            switch(items[i].id){
-                case ITEM_AIR:
-                    break;
-                case ITEM_WALL:
-                    break;
-                case ITEM_CHEST:
-                    items[i].item_texture = chest_texture;
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 
     void OnCleanup(){
