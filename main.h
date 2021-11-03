@@ -1,7 +1,10 @@
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <vector>
 
 #define SYNC_POS() grid_cursor.x = avatar.position.x * grid_cell_size; grid_cursor.y = avatar.position.y * grid_cell_size;
+#define GRID_HEIGHT 20
+#define GRID_WIDTH 20
 
 struct point{
     int x,y;
@@ -57,8 +60,8 @@ public:
     SDL_Surface* Surf_Display;
 
     int grid_cell_size = 72;
-    int grid_width = 20;
-    int grid_height = 20;
+    int grid_width = GRID_HEIGHT;
+    int grid_height = GRID_WIDTH;
     
     int grid_size = grid_width * grid_height;
 
