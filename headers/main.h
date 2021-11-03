@@ -121,17 +121,27 @@ public:
         }
         SDL_SetWindowTitle(window, "The Reckoning");
 
-        SDL_Surface* bmp_surf = SDL_LoadBMP("cat.bmp");
+        // INITIALIZING TEXTURES
+
+        SDL_Surface* bmp_surf = SDL_LoadBMP("textures/cat.bmp");
         if(!bmp_surf){
             exit(EXIT_FAILURE);
         }
         avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
         
-        bmp_surf = SDL_LoadBMP("chest.bmp");
+        bmp_surf = SDL_LoadBMP("textures/chest.bmp");
+        if(!bmp_surf){
+            exit(EXIT_FAILURE);
+        }
         chest_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
-        bmp_surf = SDL_LoadBMP("totem.bmp");
+        bmp_surf = SDL_LoadBMP("textures/totem.bmp");
+        if(!bmp_surf){
+            exit(EXIT_FAILURE);
+        }
         totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ---
         
         Inventory_Menu.h = (grid_cell_size * 5) + 40;
         Inventory_Menu.w = (grid_cell_size * 12) + 40;
