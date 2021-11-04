@@ -8,7 +8,9 @@ int main(){
     if(Game.OnInit() == false) {
         return -1;
     }
-    
+
+    if(!Game.InitTextures())
+        exit(EXIT_FAILURE); 
     
     Game.init_world.PlaceTestItems();
     Game.InitItems();

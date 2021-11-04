@@ -3,8 +3,9 @@
 #include <vector>
 
 #define SYNC_POS() grid_cursor.x = avatar.position.x * grid_cell_size; grid_cursor.y = avatar.position.y * grid_cell_size;
-#define GRID_HEIGHT 20
-#define GRID_WIDTH 20
+#define GRID_HEIGHT 25
+#define GRID_WIDTH 25
+#define GRID_CELL_SIZE 72
 
 #include "item_ids.h"
 #include "item.h"
@@ -38,7 +39,7 @@ public:
     bool Running;
     SDL_Surface* Surf_Display;
 
-    int grid_cell_size = 72;
+    int grid_cell_size = GRID_CELL_SIZE;
     int grid_width = GRID_HEIGHT;
     int grid_height = GRID_WIDTH;
     
@@ -120,28 +121,6 @@ public:
             return EXIT_FAILURE;
         }
         SDL_SetWindowTitle(window, "The Reckoning");
-
-        // INITIALIZING TEXTURES
-
-        SDL_Surface* bmp_surf = SDL_LoadBMP("textures/cat.bmp");
-        if(!bmp_surf){
-            exit(EXIT_FAILURE);
-        }
-        avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
-        
-        bmp_surf = SDL_LoadBMP("textures/chest.bmp");
-        if(!bmp_surf){
-            exit(EXIT_FAILURE);
-        }
-        chest_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
-
-        bmp_surf = SDL_LoadBMP("textures/totem.bmp");
-        if(!bmp_surf){
-            exit(EXIT_FAILURE);
-        }
-        totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
-
-        // ---
         
         Inventory_Menu.h = (grid_cell_size * 5) + 40;
         Inventory_Menu.w = (grid_cell_size * 12) + 40;
@@ -150,6 +129,28 @@ public:
 
         grid_cursor.x = avatar.position.x * grid_cell_size;
         grid_cursor.y = avatar.position.y * grid_cell_size;
+
+        return true;
+    }
+
+    bool InitTextures(){
+        SDL_Surface* bmp_surf = SDL_LoadBMP("textures/cat.bmp");
+        // Player Texture
+        if(!bmp_surf) return false;
+
+        avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ITEM_CHEST
+        bmp_surf = SDL_LoadBMP("textures/chest.bmp");
+        if(!bmp_surf) return false;
+
+        chest_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ITEM_TOTEM
+        bmp_surf = SDL_LoadBMP("textures/totem.bmp");
+        if(!bmp_surf) return false;
+
+        totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         return true;
     }
@@ -164,13 +165,13 @@ public:
                 switch (Event->key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    if(grid_cursor.y-grid_cell_size != -72){
+                    if(grid_cursor.y-grid_cell_size != (0 - grid_cell_size) ){
                         avatar.position.y -= 1;
                         grid_cursor.y -= grid_cell_size;
                     }
                     else if(current_map->GetNextMap('u') != nullptr){
                         current_map = current_map->GetNextMap('u');
-                        avatar.position.y = 19;
+                        avatar.position.y = grid_height - 1;
                         SYNC_POS();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -178,7 +179,7 @@ public:
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    if(grid_cursor.y+grid_cell_size != 1440){
+                    if(grid_cursor.y+grid_cell_size != (grid_height * grid_cell_size) ){
                         avatar.position.y += 1;
                         grid_cursor.y += grid_cell_size;
                     }
@@ -192,13 +193,13 @@ public:
                     break;
                 case SDLK_a:
                 case SDLK_LEFT:
-                    if(grid_cursor.x-grid_cell_size != -72){
+                    if(grid_cursor.x-grid_cell_size != 0 - grid_cell_size){
                         avatar.position.x -= 1;
                         grid_cursor.x -= grid_cell_size;
                     }
                     else if(current_map->GetNextMap('l') != nullptr){
                         current_map = current_map->GetNextMap('l');
-                        avatar.position.x = 19;
+                        avatar.position.x = grid_width - 1;
                         SYNC_POS();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -206,7 +207,7 @@ public:
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    if(grid_cursor.x+grid_cell_size != 1440){
+                    if(grid_cursor.x+grid_cell_size != (grid_width * grid_cell_size) ){
                         avatar.position.x += 1;
                         grid_cursor.x += grid_cell_size;
                     }

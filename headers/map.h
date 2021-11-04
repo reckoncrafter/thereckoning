@@ -77,14 +77,14 @@ public:
             test_items[i].id = ITEM_TOTEM;
         }
         test_items[0].position = {1, 1};
-        test_items[1].position = {9, 1};
-        test_items[2].position = {19,1};
-        test_items[3].position = {1,10};
-        test_items[4].position = {10,10};
-        test_items[5].position = {19,10};
-        test_items[6].position = {1, 19};
-        test_items[7].position = {10,19};
-        test_items[8].position = {19,19};
+        test_items[1].position = {GRID_WIDTH/2, 1};
+        test_items[2].position = {GRID_WIDTH - 2, 1};
+        test_items[3].position = {1, GRID_HEIGHT/2};
+        test_items[4].position = {GRID_WIDTH/2, GRID_HEIGHT/2};
+        test_items[5].position = {GRID_WIDTH - 2, GRID_HEIGHT/2};
+        test_items[6].position = {1, GRID_HEIGHT - 2};
+        test_items[7].position = {GRID_WIDTH/2, GRID_HEIGHT - 2};
+        test_items[8].position = {GRID_WIDTH - 2 ,GRID_HEIGHT - 2};
 
         aa.item_list.push_back(test_items[0]);
         ab.item_list.push_back(test_items[1]);
