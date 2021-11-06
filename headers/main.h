@@ -268,6 +268,8 @@ public:
                         std::cout << "pos: " << i.position.x << ", " << i.position.y << std::endl;
                         std::cout << std::endl;
                     }
+                    break;
+                case SDLK_o:
                     if(!init_world.FileSave()){
                         std::cout << "save failed!" << std::endl;
                     }
@@ -307,6 +309,15 @@ public:
                     }
                 }
                 else{
+                    for(int i = 0; i < current_map->item_list.size(); i++){
+                        if(current_map->item_list.at(i).id == map_editor_current_selection 
+                        && current_map->item_list.at(i).position == placedown){
+                            break;
+                        }
+                        if(current_map->item_list.at(i).position == placedown){
+                            current_map->item_list.erase(current_map->item_list.begin() + i);
+                        }
+                    }
                     PlaceItem(map_editor_current_selection, placedown);
                 }
             break;

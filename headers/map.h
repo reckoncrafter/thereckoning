@@ -84,8 +84,7 @@ public:
         for(int j = 0; j < MAP_NUM; j++){
             for(auto i : maps[j].item_list){
                 fout << j << ' ' << i.id << ' ' << i.position.x << ' ' << i.position.y;
-                if(j < MAP_NUM-1)
-                    fout << std::endl;
+                fout << std::endl;
             }
         }
         return true;
