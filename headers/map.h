@@ -43,23 +43,28 @@ public:
 };
 
 class World{
+#define MAP_NUM 9
 public:
     // World
-    Map aa, ab, ac, ba, bb, bc, ca, cb, cc;
+    Map maps[MAP_NUM];
+
+    enum MAP_IDS{
+        aa, ab, ac, ba, bb, bc, ca, cb, cc
+    };
 
     // Linking
     World(){
-        aa.Link(nullptr, &ba, nullptr, &ab); aa.name = "aa";
-        ab.Link(nullptr, &bb, &aa, &ac); ab.name = "ab";
-        ac.Link(nullptr, &bc, &ab, nullptr); ac.name = "ac";
+        maps[aa].Link(nullptr, &maps[ba], nullptr, &maps[ab]); maps[aa].name = "aa";
+        maps[ab].Link(nullptr, &maps[bb], &maps[aa], &maps[ac]); maps[ab].name = "ab";
+        maps[ac].Link(nullptr, &maps[bc], &maps[ab], nullptr); maps[ac].name = "ac";
 
-        ba.Link(&aa, &ca, nullptr, &bb); ba.name = "ba";
-        bb.Link(&ab, &cb, &ba, &bc); bb.name = "bb";
-        bc.Link(&ac, &cc, &bb, nullptr); bc.name = "bc";
+        maps[ba].Link(&maps[aa], &maps[ca], nullptr, &maps[bb]); maps[ba].name = "ba";
+        maps[bb].Link(&maps[ab], &maps[cb], &maps[ba], &maps[bc]); maps[bb].name = "bb";
+        maps[bc].Link(&maps[ac], &maps[cc], &maps[bb], nullptr); maps[bc].name = "bc";
 
-        ca.Link(&ba, nullptr, nullptr, &cb); ca.name = "ca";
-        cb.Link(&bb, nullptr, &ca, &cc); cb.name = "cb";
-        cc.Link(&bc, nullptr, &cb, nullptr); cc.name = "cc";
+        maps[ca].Link(&maps[ba], nullptr, nullptr, &maps[cb]); maps[ca].name = "ca";
+        maps[cb].Link(&maps[bb], nullptr, &maps[ca], &maps[cc]); maps[cb].name = "cb";
+        maps[cc].Link(&maps[bc], nullptr, &maps[cb], nullptr); maps[cc].name = "cc";
     }
     /*
         A        B        C
@@ -70,6 +75,52 @@ public:
     C  [ca] <-> [cb] <-> [cc]
 
     */
+
+    bool FileSave(){
+        std::ofstream fout;
+        fout.open("mapfile.trk");
+        if(fout.fail()){return false;}
+
+        for(int j = 0; j < MAP_NUM; j++){
+            for(auto i : maps[j].item_list){
+                fout << j << ' ' << i.id << ' ' << i.position.x << ' ' << i.position.y;
+                if(j < MAP_NUM-1)
+                    fout << std::endl;
+            }
+        }
+        return true;
+    }
+    bool FileLoad(){
+        std::ifstream fin;
+        fin.open("mapfile.trk");
+        if(fin.fail()){return false;}
+
+        std::string in;
+        Item fileItem;
+        do{
+            int mapn;
+
+            fin >> in;
+            std::cout << "MAP: " << in << std::endl;
+            mapn = stoi(in);
+
+            fin >> in;
+            std::cout << "id: " << in;
+            fileItem.id = stoi(in);
+
+            fin >> in;
+            std::cout << "(" << in << ", ";
+            fileItem.position.x = stoi(in);
+
+            fin >> in;
+            std::cout << in << ")" << std::endl;
+            fileItem.position.y = stoi(in);
+
+            maps[mapn].item_list.push_back(fileItem);
+        }while(!fin.eof());
+
+        return true;
+    }
 
     void PlaceTestItems(){
         Item test_items[9];
@@ -86,14 +137,8 @@ public:
         test_items[7].position = {GRID_WIDTH/2, GRID_HEIGHT - 2};
         test_items[8].position = {GRID_WIDTH - 2 ,GRID_HEIGHT - 2};
 
-        aa.item_list.push_back(test_items[0]);
-        ab.item_list.push_back(test_items[1]);
-        ac.item_list.push_back(test_items[2]);
-        ba.item_list.push_back(test_items[3]);
-        bb.item_list.push_back(test_items[4]);
-        bc.item_list.push_back(test_items[5]);
-        ca.item_list.push_back(test_items[6]);
-        cb.item_list.push_back(test_items[7]);
-        cc.item_list.push_back(test_items[8]);
+        for(int i = 0; i < MAP_NUM; i++){
+            maps[i].item_list.push_back(test_items[i]);
+        }
     }
 };
