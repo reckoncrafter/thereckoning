@@ -78,6 +78,9 @@ public:
     SDL_Texture* totem_texture;
     SDL_Texture* wall_texture;
     SDL_Texture* airwall_texture;
+    SDL_Texture* chef_texture;
+    SDL_Texture* bunny_texture;
+    SDL_Texture* ps_texture;
 
 public:
 
@@ -101,6 +104,16 @@ public:
                     break;
                 case ITEM_TOTEM:
                     i.item_texture = totem_texture;
+                    break;
+                case ITEM_CHEF:
+                    i.item_texture = chef_texture;
+                    break;
+                case ITEM_BUNNY:
+                    i.item_texture = bunny_texture;
+                    break;
+                case ITEM_PS:
+                    i.item_texture = ps_texture;
+                    break;
                 default:
                     break;
         }
@@ -190,6 +203,24 @@ public:
         CHK_TXT();
 
         airwall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ITEM_CHEF
+        bmp_surf = SDL_LoadBMP("textures/griller.bmp");
+        CHK_TXT();
+
+        chef_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ITEM_BUNNY
+        bmp_surf = SDL_LoadBMP("textures/bunny.bmp");
+        CHK_TXT();
+
+        bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // ITEM_PS
+        bmp_surf = SDL_LoadBMP("textures/pissy_shitties.bmp");
+        CHK_TXT();
+
+        ps_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         return true;
     }
