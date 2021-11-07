@@ -8,7 +8,7 @@ int main(){
     if(Game.OnInit() == false) {
         return -1;
     }
-
+    
     if(!Game.InitTextures())
         exit(EXIT_FAILURE); 
     
@@ -21,6 +21,11 @@ int main(){
     cout << Game.current_map->item_list.at(0).rect.h << " x " << Game.current_map->item_list.at(0).rect.w << endl;
     cout << (Game.current_map->item_list.at(0).item_texture) << endl;
     */
+
+    Item handItem;
+    Game.avatar.Hand = &handItem;
+    handItem.id = ITEM_PS;
+
 
     SDL_Event Event;
     while(Game.Running) {

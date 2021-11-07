@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -18,6 +19,7 @@ public:
     SDL_Texture* player_texture;
     point position;
     Item inventory[10];
+    Item* Hand;
 
     Player(){
         for(auto i : inventory){
@@ -57,6 +59,16 @@ public:
     };
 
     SDL_Rect Inventory_Menu;
+
+    SDL_Rect Dialogue_Box = {
+        .w = grid_cell_size * 21,
+        .h = grid_cell_size * 2,
+    };
+    TTF_Font* Mono;
+    SDL_Surface* dialogueSurface;
+    SDL_Color white = {255,255,255,255};
+    SDL_Texture* dialogue_texture;
+    const char* message = "I didn't vote because Republicans and Democrats are both facists.";
 
     SDL_Rect grid_cursor_ghost{0,0,grid_cell_size, grid_cell_size};
 
@@ -144,6 +156,40 @@ public:
         InitItems();
     }
 
+    bool Colliders(char dir){
+        switch(dir){
+            case 'u':
+                for(auto i : current_map->item_list){
+                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y - 1){
+                        if(i.id == ITEM_WALL) return true;
+                    }
+                }
+                break;
+            case 'd':
+                for(auto i : current_map->item_list){
+                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y + 1){
+                        if(i.id == ITEM_WALL) return true;
+                    }
+                }
+                break;
+            case 'l':
+                for(auto i : current_map->item_list){
+                    if(i.position.x == avatar.position.x - 1 && i.position.y == avatar.position.y){
+                        if(i.id == ITEM_WALL) return true;
+                    }
+                }
+                break;
+            case 'r':
+                for(auto i : current_map->item_list){
+                    if(i.position.x == avatar.position.x + 1 && i.position.y == avatar.position.y){
+                        if(i.id == ITEM_WALL) return true;
+                    }
+                }
+                break;
+        }
+        return false;
+    }
+
     bool OnInit(){
         if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
             return false;
@@ -157,6 +203,9 @@ public:
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Create window and renderer: %s", SDL_GetError());
             return EXIT_FAILURE;
         }
+        if(TTF_Init() < 0){
+            return false;
+        }
         SDL_SetWindowTitle(window, "The Reckoning");
         
         Inventory_Menu.h = (grid_cell_size * 5) + 40;
@@ -164,8 +213,24 @@ public:
         Inventory_Menu.x = (grid_cell_size * 4) - 20;
         Inventory_Menu.y = (grid_cell_size * 9) - 20;
 
+        Dialogue_Box.x = grid_cell_size * 2;
+        Dialogue_Box.y = grid_cell_size * 2;
+
         grid_cursor.x = avatar.position.x * grid_cell_size;
         grid_cursor.y = avatar.position.y * grid_cell_size;
+
+        Mono = TTF_OpenFont("DOS.ttf", 36);
+        if(Mono == NULL){
+            return EXIT_FAILURE;
+        }
+        dialogueSurface = TTF_RenderText_Solid(Mono, message, white);
+        if(dialogueSurface == NULL){
+            return EXIT_FAILURE;
+        }
+        dialogue_texture = SDL_CreateTextureFromSurface(renderer, dialogueSurface);
+        if(dialogue_texture == NULL){
+            return EXIT_FAILURE;
+        }
 
         return true;
     }
@@ -235,9 +300,11 @@ public:
                 switch (Event->key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    if(grid_cursor.y-grid_cell_size != (0 - grid_cell_size) ){
-                        avatar.position.y -= 1;
-                        grid_cursor.y -= grid_cell_size;
+                    if(grid_cursor.y-grid_cell_size != (0 - grid_cell_size)){
+                        if(!Colliders('u')){
+                            avatar.position.y -= 1;
+                            grid_cursor.y -= grid_cell_size;
+                        }
                     }
                     else if(current_map->GetNextMap('u') != nullptr){
                         current_map = current_map->GetNextMap('u');
@@ -249,9 +316,11 @@ public:
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    if(grid_cursor.y+grid_cell_size != (grid_height * grid_cell_size) ){
-                        avatar.position.y += 1;
-                        grid_cursor.y += grid_cell_size;
+                    if(grid_cursor.y+grid_cell_size != (grid_height * grid_cell_size)){
+                        if(!Colliders('d')){
+                            avatar.position.y += 1;
+                            grid_cursor.y += grid_cell_size;
+                        }
                     }
                     else if(current_map->GetNextMap('d') != nullptr){
                         current_map = current_map->GetNextMap('d');
@@ -264,8 +333,10 @@ public:
                 case SDLK_a:
                 case SDLK_LEFT:
                     if(grid_cursor.x-grid_cell_size != 0 - grid_cell_size){
-                        avatar.position.x -= 1;
-                        grid_cursor.x -= grid_cell_size;
+                        if(!Colliders('l')){
+                            avatar.position.x -= 1;
+                            grid_cursor.x -= grid_cell_size;
+                        }
                     }
                     else if(current_map->GetNextMap('l') != nullptr){
                         current_map = current_map->GetNextMap('l');
@@ -277,9 +348,11 @@ public:
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    if(grid_cursor.x+grid_cell_size != (grid_width * grid_cell_size) ){
-                        avatar.position.x += 1;
-                        grid_cursor.x += grid_cell_size;
+                    if(grid_cursor.x+grid_cell_size != (grid_width * grid_cell_size)){
+                        if(!Colliders('r')){
+                            avatar.position.x += 1;
+                            grid_cursor.x += grid_cell_size;
+                        }
                     }
                     else if(current_map->GetNextMap('r') != nullptr){
                         current_map = current_map->GetNextMap('r');
@@ -313,7 +386,7 @@ public:
                         InitItems();
                     }
                 }
-
+                
                 break;
 
             case SDL_WINDOWEVENT:
@@ -409,6 +482,14 @@ public:
         if(OnItem() == ITEM_CHEST){
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Inventory_Menu);
+        }
+        if(OnItem() == ITEM_CHEF){
+            SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
+            SDL_RenderFillRect(renderer, &Dialogue_Box);
+            SDL_Rect tmp = Dialogue_Box;
+            TTF_SizeText(Mono, message, &tmp.w, &tmp.h);
+            tmp.y += grid_cell_size/2;
+            SDL_RenderCopy(renderer, dialogue_texture, NULL, &tmp);
         }
         
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &grid_cursor);
