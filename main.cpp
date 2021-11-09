@@ -3,6 +3,7 @@
 using namespace std;
 
 int main(){
+    srand(time(NULL));
     Root Game;
 
     if(Game.OnInit() == false) {
@@ -26,11 +27,17 @@ int main(){
     Game.avatar.Hand = &handItem;
     handItem.id = ITEM_PS;
 
+    int _t = time(NULL);
 
     SDL_Event Event;
     while(Game.Running) {
         while(SDL_PollEvent(&Event)) {
             Game.OnEvent(&Event);
+        }
+
+        if(_t != time(NULL)){
+            Game.enemy.Walk();
+            _t = time(NULL);
         }
 
         Game.OnLoop();

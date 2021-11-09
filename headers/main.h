@@ -3,7 +3,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include <vector>
+#include <random>
+#include <time.h>
+#include <unistd.h>
 
 #define SYNC_POS() grid_cursor.x = avatar.position.x * grid_cell_size; grid_cursor.y = avatar.position.y * grid_cell_size;
 #define GRID_HEIGHT 25
@@ -13,6 +17,7 @@
 #include "item_ids.h"
 #include "item.h"
 #include "map.h"
+#include "messages.h"
 
 class Player{
 public:
@@ -27,6 +32,58 @@ public:
         }
         position = {2,2};
         player_texture = NULL;
+    }
+};
+
+enum __Walk{
+    _U, _D, _L, _R
+};
+
+class Enemy{
+public:
+    SDL_Texture* enemy_texture = NULL;
+    SDL_Rect enemy_rect;
+    point position;
+    std::vector<__Walk> pattern;
+
+    int walk_counter = 0;
+
+    Enemy(){
+        pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
+        position = {10,5};
+    }
+
+    void sync(){
+        enemy_rect.x = position.x * GRID_CELL_SIZE;
+        enemy_rect.y = position.y * GRID_CELL_SIZE;
+    }
+
+    void Walk(){
+        switch(pattern.at(walk_counter)){
+            case _U:
+                position.y -= 1;
+                walk_counter++;
+                sync();
+                break;
+            case _D:
+                position.y += 1;
+                walk_counter++;
+                sync();
+                break;
+            case _L:
+                position.x -= 1;
+                walk_counter++;
+                sync();
+                break;
+            case _R:
+                position.x += 1;
+                walk_counter++;
+                sync();
+                break;
+        }
+        if(walk_counter >= pattern.size()){
+            walk_counter = 0;
+        }
     }
 };
 
@@ -68,7 +125,6 @@ public:
     SDL_Surface* dialogueSurface;
     SDL_Color white = {255,255,255,255};
     SDL_Texture* dialogue_texture;
-    const char* message = "I didn't vote because Republicans and Democrats are both facists.";
 
     SDL_Rect grid_cursor_ghost{0,0,grid_cell_size, grid_cell_size};
 
@@ -79,6 +135,7 @@ public:
     SDL_Color grid_cursor_color = grid_background;
 
     Player avatar;
+    Enemy enemy;
 
     World init_world;
     Map* current_map = &init_world.maps[init_world.bb];
@@ -93,6 +150,12 @@ public:
     SDL_Texture* chef_texture;
     SDL_Texture* bunny_texture;
     SDL_Texture* ps_texture;
+
+    // Message Textures
+    std::vector<SDL_Texture*> msg_textures;
+    SDL_Texture* current_message;
+    
+    bool render_message = false;
 
 public:
 
@@ -219,16 +282,13 @@ public:
         grid_cursor.x = avatar.position.x * grid_cell_size;
         grid_cursor.y = avatar.position.y * grid_cell_size;
 
+        enemy.enemy_rect.x = enemy.position.x * grid_cell_size;
+        enemy.enemy_rect.y = enemy.position.y * grid_cell_size;
+        enemy.enemy_rect.w = grid_cell_size;
+        enemy.enemy_rect.h = grid_cell_size;
+
         Mono = TTF_OpenFont("DOS.ttf", 36);
         if(Mono == NULL){
-            return EXIT_FAILURE;
-        }
-        dialogueSurface = TTF_RenderText_Solid(Mono, message, white);
-        if(dialogueSurface == NULL){
-            return EXIT_FAILURE;
-        }
-        dialogue_texture = SDL_CreateTextureFromSurface(renderer, dialogueSurface);
-        if(dialogue_texture == NULL){
             return EXIT_FAILURE;
         }
 
@@ -280,6 +340,9 @@ public:
         CHK_TXT();
 
         bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        
+        enemy.enemy_texture = bunny_texture;
+        // this should be changed
 
         // ITEM_PS
         bmp_surf = SDL_LoadBMP("textures/pissy_shitties.bmp");
@@ -288,6 +351,43 @@ public:
         ps_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         return true;
+    }
+
+    int OnItem(){
+        for(auto &i : current_map->item_list){
+            if(avatar.position == i.position){
+                return i.id;
+            }
+        }
+        return 0;
+    }
+    bool OnSpeaker(){
+        switch(OnItem()){
+            case ITEM_CHEF:
+                return true;
+            case ITEM_TOTEM:
+                return true;
+        }
+        return false;
+    }
+
+    const char* Speak(int Item_ID){
+        int r;
+        switch(Item_ID){
+            case ITEM_CHEF:
+                r = rand()%centrist_messages_count;
+                std::cout << r << std::endl;
+                return centrist_messages[r].c_str();
+                break;
+            case ITEM_TOTEM:
+                r = rand()%totem_messages_count;
+                std::cout << r << std::endl;
+                return totem_messages[r].c_str();
+                break;
+            default:
+                break;
+        }
+        return "";
     }
 
     void OnEvent(SDL_Event* Event){
@@ -386,6 +486,19 @@ public:
                         InitItems();
                     }
                 }
+                if(OnItem() && OnSpeaker()){
+                    render_message = true;
+                    const char* s = Speak(OnItem());
+                    SDL_Surface* tmp_surf = TTF_RenderText_Blended_Wrapped(Mono, s, white, Dialogue_Box.w);
+                    if(tmp_surf == NULL){
+                        std::cout << "unable to render message" << std::endl;
+                    }
+                    current_message = SDL_CreateTextureFromSurface(renderer, tmp_surf);
+                    SDL_FreeSurface(tmp_surf);
+                }
+                else{
+                    render_message = false;
+                }
                 
                 break;
 
@@ -430,15 +543,9 @@ public:
 
     void OnLoop(){
         
-    }
 
-    int OnItem(){
-        for(auto &i : current_map->item_list){
-            if(avatar.position == i.position){
-                return i.id;
-            }
-        }
-        return 0;
+
+        
     }
 
     void OnRender(){
@@ -483,15 +590,17 @@ public:
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Inventory_Menu);
         }
-        if(OnItem() == ITEM_CHEF){
+        if(render_message){
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Dialogue_Box);
             SDL_Rect tmp = Dialogue_Box;
-            TTF_SizeText(Mono, message, &tmp.w, &tmp.h);
-            tmp.y += grid_cell_size/2;
-            SDL_RenderCopy(renderer, dialogue_texture, NULL, &tmp);
+            tmp.x += 5;
+            tmp.y += 5;
+            SDL_QueryTexture(current_message, NULL, NULL, &tmp.w, &tmp.h);
+            SDL_RenderCopy(renderer, current_message, NULL, &tmp);
+
         }
-        
+        SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &grid_cursor);
 
         SDL_RenderPresent(renderer);
