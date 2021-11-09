@@ -36,6 +36,7 @@ int main(){
                 Game.OnEvent(&Event);
         }
 
+        // THIS BLOCK EXECUTES EVERY SECOND
         if(_t != time(NULL)){
             Game.enemy.Walk();
             _t = time(NULL);
