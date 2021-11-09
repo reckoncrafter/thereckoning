@@ -9,7 +9,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#define SYNC_POS() grid_cursor.x = avatar.position.x * grid_cell_size; grid_cursor.y = avatar.position.y * grid_cell_size;
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
 #define GRID_CELL_SIZE 72
@@ -26,6 +25,7 @@ const int grid_height = GRID_WIDTH;
 class Player{
 public:
     SDL_Texture* player_texture;
+    SDL_Rect player_rect;
     point position;
     Item inventory[10];
     Item* Hand;
@@ -36,6 +36,13 @@ public:
         }
         position = {2,2};
         player_texture = NULL;
+        player_rect.w = grid_cell_size;
+        player_rect.h = grid_cell_size;
+    }
+
+    void sync(){
+        player_rect.x = position.x * grid_cell_size;
+        player_rect.y = position.y * grid_cell_size;
     }
 };
 
@@ -50,11 +57,15 @@ public:
     point position;
     std::vector<__Walk> pattern;
 
+    Map* home_map;
+
     int walk_counter = 0;
 
     Enemy(){
         pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
         position = {10,5};
+        enemy_rect.h = grid_cell_size;
+        enemy_rect.w = grid_cell_size;
     }
 
     void sync(){
@@ -109,11 +120,6 @@ public:
     // + 1 so that the last grid lines fit in the screen.
     int window_width = (grid_width * grid_cell_size) + 1;
     int window_height = (grid_height * grid_cell_size) + 1;
-
-    SDL_Rect grid_cursor = {
-        .w = grid_cell_size,
-        .h = grid_cell_size,
-    };
 
     SDL_Rect Inventory_Menu;
 
@@ -279,18 +285,15 @@ public:
         Dialogue_Box.x = grid_cell_size * 2;
         Dialogue_Box.y = grid_cell_size * 2;
 
-        grid_cursor.x = avatar.position.x * grid_cell_size;
-        grid_cursor.y = avatar.position.y * grid_cell_size;
-
-        enemy.enemy_rect.x = enemy.position.x * grid_cell_size;
-        enemy.enemy_rect.y = enemy.position.y * grid_cell_size;
-        enemy.enemy_rect.w = grid_cell_size;
-        enemy.enemy_rect.h = grid_cell_size;
+        avatar.sync();
+        enemy.sync();
 
         Mono = TTF_OpenFont("DOS.ttf", 36);
         if(Mono == NULL){
             return EXIT_FAILURE;
         }
+
+        enemy.home_map = &init_world.maps[init_world.bb];
 
         return true;
     }
@@ -376,12 +379,10 @@ public:
         switch(Item_ID){
             case ITEM_CHEF:
                 r = rand()%centrist_messages_count;
-                std::cout << r << std::endl;
                 return centrist_messages[r].c_str();
                 break;
             case ITEM_TOTEM:
                 r = rand()%totem_messages_count;
-                std::cout << r << std::endl;
                 return totem_messages[r].c_str();
                 break;
             default:
@@ -400,64 +401,64 @@ public:
                 switch (Event->key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    if(grid_cursor.y-grid_cell_size != (0 - grid_cell_size)){
+                    if(avatar.player_rect.y-grid_cell_size != (0 - grid_cell_size)){
                         if(!Colliders('u')){
                             avatar.position.y -= 1;
-                            grid_cursor.y -= grid_cell_size;
+                            avatar.sync();
                         }
                     }
                     else if(current_map->GetNextMap('u') != nullptr){
                         current_map = current_map->GetNextMap('u');
                         avatar.position.y = grid_height - 1;
-                        SYNC_POS();
+                        avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    if(grid_cursor.y+grid_cell_size != (grid_height * grid_cell_size)){
+                    if(avatar.player_rect.y+grid_cell_size != (grid_height * grid_cell_size)){
                         if(!Colliders('d')){
                             avatar.position.y += 1;
-                            grid_cursor.y += grid_cell_size;
+                            avatar.player_rect.y += grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('d') != nullptr){
                         current_map = current_map->GetNextMap('d');
                         avatar.position.y = 0;
-                        SYNC_POS();
+                        avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_a:
                 case SDLK_LEFT:
-                    if(grid_cursor.x-grid_cell_size != 0 - grid_cell_size){
+                    if(avatar.player_rect.x-grid_cell_size != 0 - grid_cell_size){
                         if(!Colliders('l')){
                             avatar.position.x -= 1;
-                            grid_cursor.x -= grid_cell_size;
+                            avatar.player_rect.x -= grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('l') != nullptr){
                         current_map = current_map->GetNextMap('l');
                         avatar.position.x = grid_width - 1;
-                        SYNC_POS();
+                        avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    if(grid_cursor.x+grid_cell_size != (grid_width * grid_cell_size)){
+                    if(avatar.player_rect.x+grid_cell_size != (grid_width * grid_cell_size)){
                         if(!Colliders('r')){
                             avatar.position.x += 1;
-                            grid_cursor.x += grid_cell_size;
+                            avatar.player_rect.x += grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('r') != nullptr){
                         current_map = current_map->GetNextMap('r');
                         avatar.position.x = 0;
-                        SYNC_POS();
+                        avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
                     }
@@ -600,8 +601,11 @@ public:
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
 
         }
+
+        if(current_map == enemy.home_map)
         SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
-        SDL_RenderCopy(renderer, avatar.player_texture, NULL, &grid_cursor);
+
+        SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
 
         SDL_RenderPresent(renderer);
     }
