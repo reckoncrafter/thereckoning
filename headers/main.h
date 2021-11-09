@@ -103,8 +103,6 @@ public:
     }
 };
 
-
-
 class Root{
 public:
     SDL_Window *window;
@@ -161,7 +159,7 @@ public:
     // Message Textures
     std::vector<SDL_Texture*> msg_textures;
     SDL_Texture* current_message;
-    
+
     bool render_message = false;
 
 public:
