@@ -2,11 +2,12 @@
 
 using namespace std;
 
-int main(){
+int main(int argv, char** args){
     srand(time(NULL));
     Root Game;
 
     if(Game.OnInit() == false) {
+        cout << "Failure to Initialize" << endl;
         return -1;
     }
     

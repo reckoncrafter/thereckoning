@@ -11,7 +11,8 @@
 
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
-#define GRID_CELL_SIZE 72
+#define GRID_CELL_SIZE 24
+#define FONT_SIZE 16
 
 #include "item_ids.h"
 #include "item.h"
@@ -288,7 +289,7 @@ public:
         avatar.sync();
         enemy.sync();
 
-        Mono = TTF_OpenFont("DOS.ttf", 36);
+        Mono = TTF_OpenFont("DOS.ttf", FONT_SIZE);
         if(Mono == NULL){
             return EXIT_FAILURE;
         }
