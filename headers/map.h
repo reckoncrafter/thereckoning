@@ -100,19 +100,19 @@ public:
             int mapn;
 
             fin >> in;
-            std::cout << "MAP: " << in << std::endl;
+            //std::cout << "MAP: " << in << std::endl;
             mapn = stoi(in);
 
             fin >> in;
-            std::cout << "id: " << in;
+            //std::cout << "id: " << in;
             fileItem.id = stoi(in);
 
             fin >> in;
-            std::cout << "(" << in << ", ";
+            //std::cout << "(" << in << ", ";
             fileItem.position.x = stoi(in);
 
             fin >> in;
-            std::cout << in << ")" << std::endl;
+            //std::cout << in << ")" << std::endl;
             fileItem.position.y = stoi(in);
 
             maps[mapn].item_list.push_back(fileItem);

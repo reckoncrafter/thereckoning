@@ -468,6 +468,7 @@ public:
                     std::cout << "set to " << Event->key.keysym.sym-SDLK_0 << std::endl;
                     map_editor_current_selection = (Event->key.keysym.sym-SDLK_0);
                     break;
+                /*
                 case SDLK_p:
                     for(auto i : current_map->item_list){
                         std::cout << "id: " << i.id << std::endl;
@@ -475,6 +476,7 @@ public:
                         std::cout << std::endl;
                     }
                     break;
+                */
                 case SDLK_o:
                     if(!init_world.FileSave()){
                         std::cout << "save failed!" << std::endl;
