@@ -19,6 +19,10 @@
 #include "map.h"
 #include "messages.h"
 
+const int grid_cell_size = GRID_CELL_SIZE;
+const int grid_width = GRID_HEIGHT;
+const int grid_height = GRID_WIDTH;
+
 class Player{
 public:
     SDL_Texture* player_texture;
@@ -54,8 +58,8 @@ public:
     }
 
     void sync(){
-        enemy_rect.x = position.x * GRID_CELL_SIZE;
-        enemy_rect.y = position.y * GRID_CELL_SIZE;
+        enemy_rect.x = position.x * grid_cell_size;
+        enemy_rect.y = position.y * grid_cell_size;
     }
 
     void Walk(){
@@ -99,10 +103,6 @@ public:
 
     bool Running;
     SDL_Surface* Surf_Display;
-
-    int grid_cell_size = GRID_CELL_SIZE;
-    int grid_width = GRID_HEIGHT;
-    int grid_height = GRID_WIDTH;
     
     int grid_size = grid_width * grid_height;
 
