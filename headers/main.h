@@ -18,6 +18,7 @@
 #include "item.h"
 #include "map.h"
 #include "messages.h"
+#include "texture_map.h"
 
 const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
@@ -216,6 +217,47 @@ public:
         Running = true;
     }
 
+    void DrawWallEdges(Item *wall){
+        const int stroke = 10;
+        SDL_SetRenderDrawColor(renderer, 82, 49, 28, 255); // dirt
+        if(!Colliders('u', wall->position, current_map->item_list)){
+            SDL_Rect _h = {
+                .x = wall->rect.x,
+                .y = wall->rect.y,
+                .w = grid_cell_size,
+                .h = stroke,
+            };
+            SDL_RenderFillRect(renderer, &_h);
+        }
+        if(!Colliders('d', wall->position, current_map->item_list)){
+            SDL_Rect _h = {
+                .x = wall->rect.x,
+                .y = wall->rect.y + (grid_cell_size - stroke),
+                .w = grid_cell_size,
+                .h = stroke,    
+            };
+            SDL_RenderFillRect(renderer, &_h);
+        }
+        if(!Colliders('l', wall->position, current_map->item_list)){
+            SDL_Rect _v = {
+                .x = wall->rect.x,
+                .y = wall->rect.y,
+                .w = stroke,
+                .h = grid_cell_size,
+            };
+            SDL_RenderFillRect(renderer, &_v);
+        }
+        if(!Colliders('r', wall->position, current_map->item_list)){
+            SDL_Rect _v = {
+                .x = wall->rect.x + (grid_cell_size - stroke),
+                .y = wall->rect.y,
+                .w = stroke,                
+                .h = grid_cell_size,
+            };
+            SDL_RenderFillRect(renderer, &_v);
+        }
+    }
+
     void AssignTextures(Item &i){
         switch(i.id){
                 case ITEM_AIR:
@@ -369,7 +411,7 @@ public:
         totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // ITEM_WALL
-        bmp_surf = SDL_LoadBMP("textures/wall.bmp");
+        bmp_surf = SDL_LoadBMP("textures/wall_texture.bmp");
         CHK_TXT();
 
         wall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
@@ -624,6 +666,8 @@ public:
         for(auto &i : current_map->item_list){
             if(i.item_texture)
             SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
+            if(i.id == ITEM_WALL)
+            DrawWallEdges(&i);
         }
 
         if (mouse_active && mouse_hover) {
