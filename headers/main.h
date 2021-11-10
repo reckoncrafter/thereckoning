@@ -166,6 +166,13 @@ public:
     int window_width = (grid_width * grid_cell_size) + 1;
     int window_height = (grid_height * grid_cell_size) + 1;
 
+    SDL_Rect world_backround = {
+        .x = 0,
+        .y = 0,
+        .w = (grid_cell_size * grid_width),
+        .h = (grid_cell_size * grid_height),
+    };
+
     SDL_Rect Inventory_Menu;
 
     SDL_Rect Dialogue_Box = {
@@ -195,6 +202,7 @@ public:
     int map_editor_current_selection = ITEM_AIR;
 
     // Textures
+    SDL_Texture* world_texture;
     SDL_Texture* chest_texture;
     SDL_Texture* totem_texture;
     SDL_Texture* wall_texture;
@@ -218,10 +226,7 @@ public:
 
     void DrawWallEdges(Item *wall){
         const int stroke = 10;
-        int u=0b0001;
-        int d=0b0010;
-        int l=0b0100;
-        int r=0b1000;
+        bool u=true,d=true,l=true,r=true;
 
 
         point origin = {wall->rect.x, wall->rect.y};
@@ -234,7 +239,7 @@ public:
                 .h = stroke,
             };
             SDL_RenderFillRect(renderer, &_h);
-            u = 0b0000;
+            u = false;
         }
         if(!Colliders('d', wall->position, current_map->item_list)){
             SDL_Rect _h = {
@@ -244,7 +249,7 @@ public:
                 .h = stroke,    
             };
             SDL_RenderFillRect(renderer, &_h);
-            d = 0b0000;
+            d = false;
         }
         if(!Colliders('l', wall->position, current_map->item_list)){
             SDL_Rect _v = {
@@ -254,7 +259,7 @@ public:
                 .h = grid_cell_size,
             };
             SDL_RenderFillRect(renderer, &_v);
-            l = 0b0000;
+            l = false;
         }
         if(!Colliders('r', wall->position, current_map->item_list)){
             SDL_Rect _v = {
@@ -264,36 +269,33 @@ public:
                 .h = grid_cell_size,
             };
             SDL_RenderFillRect(renderer, &_v);
-            r = 0b0000;
+            r = false;
         }
-        /* FIXME: CORNER FILLING
+        
         SDL_Rect sq = {
             .w = stroke,
             .h = stroke,
         };
-        int corner = u ^ d ^ l ^ r;
-        switch(corner){
-            case 0b0101: // u && l
-                sq.x = origin.x;
-                sq.y = origin.y;
-                break;
-            case 0b1001: // u && r
-                sq.x = origin.x + (grid_cell_size - stroke);
-                sq.y = origin.y;
-                break;
-            case 0b0110: // d && l
-                sq.x = origin.x;
-                sq.y = origin.y + (grid_cell_size - stroke);
-                break;
-            case 0b1010: // d && r
-                sq.x = origin.x + (grid_cell_size - stroke);
-                sq.y = origin.y + (grid_cell_size - stroke);
-                break;
-            default:
-                return;
+        if(u && l){
+            sq.x = origin.x;
+            sq.y = origin.y;
+            SDL_RenderFillRect(renderer, &sq);
         }
-        SDL_RenderFillRect(renderer, &sq);
-        */
+        if(u && r){
+            sq.x = origin.x + (grid_cell_size - stroke);
+            sq.y = origin.y;
+            SDL_RenderFillRect(renderer, &sq);
+        }
+        if(d && l){
+            sq.x = origin.x;
+            sq.y = origin.y + (grid_cell_size - stroke);
+            SDL_RenderFillRect(renderer, &sq);
+        }
+        if(d && r){
+            sq.x = origin.x + (grid_cell_size - stroke);
+            sq.y = origin.y + (grid_cell_size - stroke);
+            SDL_RenderFillRect(renderer, &sq);
+        }
     }
 
     void AssignTextures(Item &i){
@@ -435,6 +437,12 @@ public:
         CHK_TXT();
 
         avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+        // World Texture
+        bmp_surf = SDL_LoadBMP("textures/world.bmp");
+        CHK_TXT();
+
+        world_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // ITEM_CHEST
         bmp_surf = SDL_LoadBMP("textures/chest.bmp");
@@ -684,9 +692,12 @@ public:
 
     void OnRender(){
         // Draw grid background.
+        /*
         SDL_SetRenderDrawColor(renderer, grid_background.r, grid_background.g,
             grid_background.b, grid_background.a);
         SDL_RenderClear(renderer);
+        */
+        SDL_RenderCopy(renderer, world_texture, NULL, &world_backround);
 
         // Draw grid lines.
         SDL_SetRenderDrawColor(renderer, grid_line_color.r, grid_line_color.g,
