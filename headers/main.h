@@ -30,6 +30,7 @@ public:
     point position;
     Item inventory[10];
     Item* Hand;
+    bool isDead = false;
 
     Player(){
         for(auto i : inventory){
@@ -546,10 +547,10 @@ public:
     }
 
     void OnLoop(){
-        
-
-
-        
+        if(avatar.position == enemy.position){
+            SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
+            avatar.isDead = true;
+        }
     }
 
     void OnRender(){
@@ -594,6 +595,10 @@ public:
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Inventory_Menu);
         }
+
+        if(current_map == enemy.home_map)
+            SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
+
         if(render_message){
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Dialogue_Box);
@@ -605,8 +610,7 @@ public:
 
         }
 
-        if(current_map == enemy.home_map)
-        SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
+
 
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
 

@@ -33,12 +33,22 @@ int main(int argv, char** args){
     SDL_Event Event;
     while(Game.Running) {
         while(SDL_PollEvent(&Event)) {
-            Game.OnEvent(&Event);
+            if(!Game.avatar.isDead)
+                Game.OnEvent(&Event);
         }
 
+        // THIS BLOCK EXECUTES EVERY SECOND
         if(_t != time(NULL)){
             Game.enemy.Walk();
             _t = time(NULL);
+
+            if(Game.avatar.isDead){
+                Game.avatar.isDead = false;
+                SDL_SetTextureColorMod(Game.avatar.player_texture, 255,255,255);
+                Game.avatar.position = {2,2};
+                Game.avatar.sync();
+            }
+            
         }
 
         Game.OnLoop();
