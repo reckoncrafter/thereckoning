@@ -38,14 +38,25 @@ int main(){
 
         // THIS BLOCK EXECUTES EVERY SECOND
         if(_t != time(NULL)){
-            Game.enemy.Walk();
+
+            for(auto &_enemy : Game.enemies){
+                _enemy.Walk();
+            }
             _t = time(NULL);
 
             if(Game.avatar.isDead){
                 Game.avatar.isDead = false;
                 SDL_SetTextureColorMod(Game.avatar.player_texture, 255,255,255);
+                Game.current_map = &Game.init_world.maps[Game.init_world.bb];
                 Game.avatar.position = {2,2};
                 Game.avatar.sync();
+            }
+
+            for(auto &_enemy : Game.enemies){
+                if(_enemy.walk_counter == 0){
+                    _enemy.doRandomWalk ^= true;
+                    // XOR babeeeey
+                }                
             }
             
         }

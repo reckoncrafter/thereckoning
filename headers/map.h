@@ -43,10 +43,11 @@ public:
 };
 
 class World{
-#define MAP_NUM 9
+#define __MAP_NUM 9
 public:
     // World
-    Map maps[MAP_NUM];
+    Map maps[__MAP_NUM];
+    const int MAP_NUM = __MAP_NUM;
 
     enum MAP_IDS{
         aa, ab, ac, ba, bb, bc, ca, cb, cc
@@ -100,22 +101,21 @@ public:
             int mapn;
 
             fin >> in;
-            std::cout << "MAP: " << in << std::endl;
             mapn = stoi(in);
 
             fin >> in;
-            std::cout << "id: " << in;
             fileItem.id = stoi(in);
 
             fin >> in;
-            std::cout << "(" << in << ", ";
             fileItem.position.x = stoi(in);
 
             fin >> in;
-            std::cout << in << ")" << std::endl;
             fileItem.position.y = stoi(in);
 
-            maps[mapn].item_list.push_back(fileItem);
+            if(mapn < MAP_NUM){
+                maps[mapn].item_list.push_back(fileItem);
+                std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.position.x << "," << fileItem.position.y << ")" << std::endl;
+            }
         }while(!fin.eof());
 
         return true;

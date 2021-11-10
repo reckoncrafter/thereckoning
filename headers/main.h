@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <array>
 #include <random>
 #include <time.h>
 #include <unistd.h>
@@ -21,6 +22,40 @@
 const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
 const int grid_height = GRID_WIDTH;
+
+bool Colliders(char dir, point ref_pos, std::vector<Item> &item_list){
+    switch(dir){
+        case 'u':
+            for(auto i : item_list){
+                if(i.position.x == ref_pos.x && i.position.y == ref_pos.y - 1){
+                    if(i.id == ITEM_WALL) return true;
+                }
+            }
+            break;
+        case 'd':
+            for(auto i : item_list){
+                if(i.position.x == ref_pos.x && i.position.y == ref_pos.y + 1){
+                    if(i.id == ITEM_WALL) return true;
+                }
+            }
+            break;
+        case 'l':
+            for(auto i : item_list){
+                if(i.position.x == ref_pos.x - 1 && i.position.y == ref_pos.y){
+                    if(i.id == ITEM_WALL) return true;
+                }
+            }
+            break;
+        case 'r':
+            for(auto i : item_list){
+                if(i.position.x == ref_pos.x + 1 && i.position.y == ref_pos.y){
+                    if(i.id == ITEM_WALL) return true;
+                }
+            }
+            break;
+    }
+    return false;
+}
 
 class Player{
 public:
@@ -61,10 +96,11 @@ public:
     Map* home_map;
 
     int walk_counter = 0;
+    bool doRandomWalk = false;
 
     Enemy(){
         pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
-        position = {10,5};
+        position = {0,0};
         enemy_rect.h = grid_cell_size;
         enemy_rect.w = grid_cell_size;
     }
@@ -75,32 +111,42 @@ public:
     }
 
     void Walk(){
-        switch(pattern.at(walk_counter)){
+        int walk = doRandomWalk? rand()%4 : pattern.at(walk_counter);
+        switch(walk){
             case _U:
-                position.y -= 1;
+                if(!Colliders('u', position, home_map->item_list) && position.y-1 >= 0){
+                    position.y -= 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _D:
-                position.y += 1;
+                if(!Colliders('d', position, home_map->item_list) && position.y+1 < GRID_HEIGHT){
+                    position.y += 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _L:
-                position.x -= 1;
+                if(!Colliders('l', position, home_map->item_list) && position.x-1 >= 0){
+                    position.x -= 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _R:
-                position.x += 1;
+                if(!Colliders('r', position, home_map->item_list) && position.x+1 < GRID_WIDTH){
+                    position.x += 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
         }
         if(walk_counter >= pattern.size()){
             walk_counter = 0;
         }
     }
+
 };
 
 class Root{
@@ -140,7 +186,8 @@ public:
     SDL_Color grid_cursor_color = grid_background;
 
     Player avatar;
-    Enemy enemy;
+
+    std::vector<Enemy> enemies;
 
     World init_world;
     Map* current_map = &init_world.maps[init_world.bb];
@@ -224,38 +271,20 @@ public:
         InitItems();
     }
 
-    bool Colliders(char dir){
-        switch(dir){
-            case 'u':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y - 1){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'd':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y + 1){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'l':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x - 1 && i.position.y == avatar.position.y){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'r':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x + 1 && i.position.y == avatar.position.y){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
+    void EnemySpawn(){
+        for(int i = 0; i < init_world.MAP_NUM; i++){
+            for(int j = 0; j < 4; j++){
+                Enemy tmp;
+                tmp.position.x = rand()%GRID_WIDTH;
+                tmp.position.y = rand()&GRID_HEIGHT;
+                tmp.home_map = &init_world.maps[i];
+                enemies.push_back(tmp);
+            }
         }
-        return false;
+        for(auto &_enemy : enemies){
+            _enemy.sync();
+            _enemy.walk_counter = rand()%8;
+        }
     }
 
     bool OnInit(){
@@ -284,15 +313,35 @@ public:
         Dialogue_Box.x = grid_cell_size * 2;
         Dialogue_Box.y = grid_cell_size * 2;
 
-        avatar.sync();
-        enemy.sync();
 
+        // Players and NPCs
+        avatar.sync();
+
+        /*
+        for(int i = 0; i < 4; i++){
+            enemies.push_back(Enemy());
+            enemies.at(i).home_map = &init_world.maps[init_world.bb];
+        }
+        enemies.at(0).position = {13,5};
+        enemies.at(1).position = {5,13};
+        enemies.at(2).position = {21,13};
+        enemies.at(3).position = {13,21};
+
+        for(auto &_enemy : enemies){
+            _enemy.sync();
+        }
+
+        for(auto &_enemy : enemies){
+            _enemy.walk_counter = rand()%8;
+        }
+        */
+        EnemySpawn();
+
+        // Fonts
         Mono = TTF_OpenFont("DOS.ttf", 36);
         if(Mono == NULL){
             return EXIT_FAILURE;
         }
-
-        enemy.home_map = &init_world.maps[init_world.bb];
 
         return true;
     }
@@ -343,8 +392,11 @@ public:
 
         bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
         
-        enemy.enemy_texture = bunny_texture;
+            
         // this should be changed
+        for(auto &_enemy : enemies){
+            _enemy.enemy_texture = bunny_texture;
+        }
 
         // ITEM_PS
         bmp_surf = SDL_LoadBMP("textures/pissy_shitties.bmp");
@@ -401,7 +453,7 @@ public:
                 case SDLK_w:
                 case SDLK_UP:
                     if(avatar.player_rect.y-grid_cell_size != (0 - grid_cell_size)){
-                        if(!Colliders('u')){
+                        if(!Colliders('u', avatar.position, current_map->item_list)){
                             avatar.position.y -= 1;
                             avatar.sync();
                         }
@@ -417,7 +469,7 @@ public:
                 case SDLK_s:
                 case SDLK_DOWN:
                     if(avatar.player_rect.y+grid_cell_size != (grid_height * grid_cell_size)){
-                        if(!Colliders('d')){
+                        if(!Colliders('d', avatar.position, current_map->item_list)){
                             avatar.position.y += 1;
                             avatar.player_rect.y += grid_cell_size;
                         }
@@ -433,7 +485,7 @@ public:
                 case SDLK_a:
                 case SDLK_LEFT:
                     if(avatar.player_rect.x-grid_cell_size != 0 - grid_cell_size){
-                        if(!Colliders('l')){
+                        if(!Colliders('l', avatar.position, current_map->item_list)){
                             avatar.position.x -= 1;
                             avatar.player_rect.x -= grid_cell_size;
                         }
@@ -449,7 +501,7 @@ public:
                 case SDLK_d:
                 case SDLK_RIGHT:
                     if(avatar.player_rect.x+grid_cell_size != (grid_width * grid_cell_size)){
-                        if(!Colliders('r')){
+                        if(!Colliders('r', avatar.position, current_map->item_list)){
                             avatar.position.x += 1;
                             avatar.player_rect.x += grid_cell_size;
                         }
@@ -542,9 +594,11 @@ public:
     }
 
     void OnLoop(){
-        if(avatar.position == enemy.position){
-            SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
-            avatar.isDead = true;
+        for(auto &_enemy : enemies){
+            if(avatar.position == _enemy.position && current_map == _enemy.home_map){
+                SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
+                avatar.isDead = true;
+            }
         }
     }
 
@@ -590,9 +644,12 @@ public:
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Inventory_Menu);
         }
-
-        if(current_map == enemy.home_map)
-            SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
+            
+        for(auto &_enemy : enemies){
+            if(current_map == _enemy.home_map){
+                SDL_RenderCopy(renderer, _enemy.enemy_texture, NULL, &_enemy.enemy_rect);
+            }
+        }
 
         if(render_message){
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
