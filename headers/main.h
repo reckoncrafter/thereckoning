@@ -18,7 +18,6 @@
 #include "item.h"
 #include "map.h"
 #include "messages.h"
-#include "texture_map.h"
 
 const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
@@ -219,43 +218,82 @@ public:
 
     void DrawWallEdges(Item *wall){
         const int stroke = 10;
+        int u=0b0001;
+        int d=0b0010;
+        int l=0b0100;
+        int r=0b1000;
+
+
+        point origin = {wall->rect.x, wall->rect.y};
         SDL_SetRenderDrawColor(renderer, 82, 49, 28, 255); // dirt
         if(!Colliders('u', wall->position, current_map->item_list)){
             SDL_Rect _h = {
-                .x = wall->rect.x,
-                .y = wall->rect.y,
+                .x = origin.x,
+                .y = origin.y,
                 .w = grid_cell_size,
                 .h = stroke,
             };
             SDL_RenderFillRect(renderer, &_h);
+            u = 0b0000;
         }
         if(!Colliders('d', wall->position, current_map->item_list)){
             SDL_Rect _h = {
-                .x = wall->rect.x,
-                .y = wall->rect.y + (grid_cell_size - stroke),
+                .x = origin.x,
+                .y = origin.y + (grid_cell_size - stroke),
                 .w = grid_cell_size,
                 .h = stroke,    
             };
             SDL_RenderFillRect(renderer, &_h);
+            d = 0b0000;
         }
         if(!Colliders('l', wall->position, current_map->item_list)){
             SDL_Rect _v = {
-                .x = wall->rect.x,
-                .y = wall->rect.y,
+                .x = origin.x,
+                .y = origin.y,
                 .w = stroke,
                 .h = grid_cell_size,
             };
             SDL_RenderFillRect(renderer, &_v);
+            l = 0b0000;
         }
         if(!Colliders('r', wall->position, current_map->item_list)){
             SDL_Rect _v = {
-                .x = wall->rect.x + (grid_cell_size - stroke),
-                .y = wall->rect.y,
+                .x = origin.x + (grid_cell_size - stroke),
+                .y = origin.y,
                 .w = stroke,                
                 .h = grid_cell_size,
             };
             SDL_RenderFillRect(renderer, &_v);
+            r = 0b0000;
         }
+        /* FIXME: CORNER FILLING
+        SDL_Rect sq = {
+            .w = stroke,
+            .h = stroke,
+        };
+        int corner = u ^ d ^ l ^ r;
+        switch(corner){
+            case 0b0101: // u && l
+                sq.x = origin.x;
+                sq.y = origin.y;
+                break;
+            case 0b1001: // u && r
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y;
+                break;
+            case 0b0110: // d && l
+                sq.x = origin.x;
+                sq.y = origin.y + (grid_cell_size - stroke);
+                break;
+            case 0b1010: // d && r
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y + (grid_cell_size - stroke);
+                break;
+            default:
+                return;
+        }
+        SDL_RenderFillRect(renderer, &sq);
+        */
     }
 
     void AssignTextures(Item &i){
