@@ -1,5 +1,7 @@
 #include "headers/main.h"
 
+#define GAME_SPEED_LIMITER 16666 // 60 FPS
+
 using namespace std;
 
 int main(){
@@ -31,6 +33,8 @@ int main(){
 
     SDL_Event Event;
     while(Game.Running) {
+        usleep(GAME_SPEED_LIMITER);
+        
         while(SDL_PollEvent(&Event)) {
             if(!Game.avatar.isDead)
                 Game.OnEvent(&Event);
@@ -48,6 +52,7 @@ int main(){
                 Game.avatar.isDead = false;
                 SDL_SetTextureColorMod(Game.avatar.player_texture, 255,255,255);
                 Game.current_map = &Game.init_world.maps[Game.init_world.bb];
+                Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
                 Game.avatar.position = {2,2};
                 Game.avatar.sync();
             }

@@ -114,7 +114,7 @@ public:
 
             if(mapn < MAP_NUM){
                 maps[mapn].item_list.push_back(fileItem);
-                std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.position.x << "," << fileItem.position.y << ")" << std::endl;
+                //std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.position.x << "," << fileItem.position.y << ")" << std::endl;
             }
         }while(!fin.eof());
 

@@ -23,38 +23,33 @@ const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
 const int grid_height = GRID_WIDTH;
 
-bool Colliders(char dir, point ref_pos, std::vector<Item> &item_list){
-    switch(dir){
-        case 'u':
-            for(auto i : item_list){
-                if(i.position.x == ref_pos.x && i.position.y == ref_pos.y - 1){
-                    if(i.id == ITEM_WALL) return true;
-                }
-            }
-            break;
-        case 'd':
-            for(auto i : item_list){
-                if(i.position.x == ref_pos.x && i.position.y == ref_pos.y + 1){
-                    if(i.id == ITEM_WALL) return true;
-                }
-            }
-            break;
-        case 'l':
-            for(auto i : item_list){
-                if(i.position.x == ref_pos.x - 1 && i.position.y == ref_pos.y){
-                    if(i.id == ITEM_WALL) return true;
-                }
-            }
-            break;
-        case 'r':
-            for(auto i : item_list){
-                if(i.position.x == ref_pos.x + 1 && i.position.y == ref_pos.y){
-                    if(i.id == ITEM_WALL) return true;
-                }
-            }
-            break;
+int Colliders(const std::string steps, point ref_pos, std::vector<Item> &item_list){
+    int _x = 0;
+    int _y = 0;
+    for(auto i : steps){
+        switch(i){
+            case 'u':
+                _y--;
+                break;
+            case 'd':
+                _y++;
+                break;
+            case 'l':
+                _x--;
+                break;
+            case 'r':
+                _x++;
+                break;
+            default:
+                break;
+        }
     }
-    return false;
+    for(auto i : item_list){
+        if(i.position.x == ref_pos.x + _x && i.position.y == ref_pos.y + _y){
+            return i.id;
+        }
+    }
+    return 0;
 }
 
 class Player{
@@ -114,28 +109,28 @@ public:
         int walk = doRandomWalk? rand()%4 : pattern.at(walk_counter);
         switch(walk){
             case _U:
-                if(!Colliders('u', position, home_map->item_list) && position.y-1 >= 0){
+                if(!Colliders("u", position, home_map->item_list) && position.y-1 >= 0){
                     position.y -= 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _D:
-                if(!Colliders('d', position, home_map->item_list) && position.y+1 < GRID_HEIGHT){
+                if(!Colliders("d", position, home_map->item_list) && position.y+1 < GRID_HEIGHT){
                     position.y += 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _L:
-                if(!Colliders('l', position, home_map->item_list) && position.x-1 >= 0){
+                if(!Colliders("l", position, home_map->item_list) && position.x-1 >= 0){
                     position.x -= 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _R:
-                if(!Colliders('r', position, home_map->item_list) && position.x+1 < GRID_WIDTH){
+                if(!Colliders("r", position, home_map->item_list) && position.x+1 < GRID_WIDTH){
                     position.x += 1;
                     sync();
                 }
@@ -203,6 +198,8 @@ public:
 
     // Textures
     SDL_Texture* world_texture;
+    SDL_Texture* wall_boundary_texture;
+
     SDL_Texture* chest_texture;
     SDL_Texture* totem_texture;
     SDL_Texture* wall_texture;
@@ -224,79 +221,94 @@ public:
         Running = true;
     }
 
-    void DrawWallEdges(Item *wall){
+    SDL_Texture* RenderWallEdges(std::vector<Item> &item_list){
+        #define RWE_FILL(__x) SDL_FillRect(wall_boundaries, &__x, SDL_MapRGBA(wall_boundaries->format, 82, 49, 28, 255));
+        SDL_Surface* wall_boundaries = SDL_CreateRGBSurfaceWithFormat(0, (grid_width * grid_cell_size), (grid_height * grid_cell_size), 32, SDL_PIXELFORMAT_RGBA32);
         const int stroke = 10;
-        bool u=true,d=true,l=true,r=true;
+
+        for(auto &wall : item_list){
+            if(wall.id != ITEM_WALL 
+            && wall.id != ITEM_AIRWALL)
+                continue;
+
+            bool u=true,d=true,l=true,r=true;
 
 
-        point origin = {wall->rect.x, wall->rect.y};
-        SDL_SetRenderDrawColor(renderer, 82, 49, 28, 255); // dirt
-        if(!Colliders('u', wall->position, current_map->item_list)){
-            SDL_Rect _h = {
-                .x = origin.x,
-                .y = origin.y,
-                .w = grid_cell_size,
+            point origin = {wall.rect.x, wall.rect.y};
+            point wp = wall.position;
+            std::vector<Item>* il = &current_map->item_list;
+
+            if(Colliders("u", wp, *il) != wall.id){
+                SDL_Rect _h = {
+                    .x = origin.x,
+                    .y = origin.y,
+                    .w = grid_cell_size,
+                    .h = stroke,
+                };
+                RWE_FILL(_h);
+                u = false;
+            }
+            if(Colliders("d", wp, *il) != wall.id){
+                SDL_Rect _h = {
+                    .x = origin.x,
+                    .y = origin.y + (grid_cell_size - stroke),
+                    .w = grid_cell_size,
+                    .h = stroke,    
+                };
+                RWE_FILL(_h);
+                d = false;
+            }
+            if(Colliders("l", wp, *il) != wall.id){
+                SDL_Rect _v = {
+                    .x = origin.x,
+                    .y = origin.y,
+                    .w = stroke,
+                    .h = grid_cell_size,
+                };
+                RWE_FILL(_v);
+                l = false;
+            }
+            if(Colliders("r", wp, *il) != wall.id){
+                SDL_Rect _v = {
+                    .x = origin.x + (grid_cell_size - stroke),
+                    .y = origin.y,
+                    .w = stroke,                
+                    .h = grid_cell_size,
+                };
+                RWE_FILL(_v);
+                r = false;
+            }
+            
+            SDL_Rect sq = {
+                .w = stroke,
                 .h = stroke,
             };
-            SDL_RenderFillRect(renderer, &_h);
-            u = false;
+            if(Colliders("ul", wp, *il) != wall.id){
+                sq.x = origin.x;
+                sq.y = origin.y;
+                RWE_FILL(sq);
+            }
+            if(Colliders("ur", wp, *il) != wall.id){
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y;
+                RWE_FILL(sq);
+            }
+            if(Colliders("dl", wp, *il) != wall.id){
+                sq.x = origin.x;
+                sq.y = origin.y + (grid_cell_size - stroke);
+                RWE_FILL(sq);
+            }
+            if(Colliders("dr", wp, *il) != wall.id){
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y + (grid_cell_size - stroke);
+                RWE_FILL(sq);
+            }
         }
-        if(!Colliders('d', wall->position, current_map->item_list)){
-            SDL_Rect _h = {
-                .x = origin.x,
-                .y = origin.y + (grid_cell_size - stroke),
-                .w = grid_cell_size,
-                .h = stroke,    
-            };
-            SDL_RenderFillRect(renderer, &_h);
-            d = false;
-        }
-        if(!Colliders('l', wall->position, current_map->item_list)){
-            SDL_Rect _v = {
-                .x = origin.x,
-                .y = origin.y,
-                .w = stroke,
-                .h = grid_cell_size,
-            };
-            SDL_RenderFillRect(renderer, &_v);
-            l = false;
-        }
-        if(!Colliders('r', wall->position, current_map->item_list)){
-            SDL_Rect _v = {
-                .x = origin.x + (grid_cell_size - stroke),
-                .y = origin.y,
-                .w = stroke,                
-                .h = grid_cell_size,
-            };
-            SDL_RenderFillRect(renderer, &_v);
-            r = false;
-        }
-        
-        SDL_Rect sq = {
-            .w = stroke,
-            .h = stroke,
-        };
-        if(u && l){
-            sq.x = origin.x;
-            sq.y = origin.y;
-            SDL_RenderFillRect(renderer, &sq);
-        }
-        if(u && r){
-            sq.x = origin.x + (grid_cell_size - stroke);
-            sq.y = origin.y;
-            SDL_RenderFillRect(renderer, &sq);
-        }
-        if(d && l){
-            sq.x = origin.x;
-            sq.y = origin.y + (grid_cell_size - stroke);
-            SDL_RenderFillRect(renderer, &sq);
-        }
-        if(d && r){
-            sq.x = origin.x + (grid_cell_size - stroke);
-            sq.y = origin.y + (grid_cell_size - stroke);
-            SDL_RenderFillRect(renderer, &sq);
-        }
+        SDL_Texture* rtn = SDL_CreateTextureFromSurface(renderer, wall_boundaries);
+        SDL_FreeSurface(wall_boundaries);
+        return rtn;
     }
+
 
     void AssignTextures(Item &i){
         switch(i.id){
@@ -343,6 +355,7 @@ public:
         for(auto &i : current_map->item_list){
             AssignTextures(i);
         }
+        wall_boundary_texture = RenderWallEdges(current_map->item_list);
     }
 
     void PlaceItem(int id, point pos){
@@ -398,25 +411,6 @@ public:
 
         // Players and NPCs
         avatar.sync();
-
-        /*
-        for(int i = 0; i < 4; i++){
-            enemies.push_back(Enemy());
-            enemies.at(i).home_map = &init_world.maps[init_world.bb];
-        }
-        enemies.at(0).position = {13,5};
-        enemies.at(1).position = {5,13};
-        enemies.at(2).position = {21,13};
-        enemies.at(3).position = {13,21};
-
-        for(auto &_enemy : enemies){
-            _enemy.sync();
-        }
-
-        for(auto &_enemy : enemies){
-            _enemy.walk_counter = rand()%8;
-        }
-        */
         EnemySpawn();
 
         // Fonts
@@ -461,12 +455,16 @@ public:
         CHK_TXT();
 
         wall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        airwall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        SDL_SetTextureColorMod(airwall_texture, 255, 60, 255);
 
+        /*
         // ITEM_AIRWALL
         bmp_surf = SDL_LoadBMP("textures/airwall.bmp");
         CHK_TXT();
 
         airwall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        */
 
         // ITEM_CHEF
         bmp_surf = SDL_LoadBMP("textures/griller.bmp");
@@ -541,7 +539,7 @@ public:
                 case SDLK_w:
                 case SDLK_UP:
                     if(avatar.player_rect.y-grid_cell_size != (0 - grid_cell_size)){
-                        if(!Colliders('u', avatar.position, current_map->item_list)){
+                        if(Colliders("u", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.y -= 1;
                             avatar.sync();
                         }
@@ -557,7 +555,7 @@ public:
                 case SDLK_s:
                 case SDLK_DOWN:
                     if(avatar.player_rect.y+grid_cell_size != (grid_height * grid_cell_size)){
-                        if(!Colliders('d', avatar.position, current_map->item_list)){
+                        if(Colliders("d", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.y += 1;
                             avatar.player_rect.y += grid_cell_size;
                         }
@@ -573,7 +571,7 @@ public:
                 case SDLK_a:
                 case SDLK_LEFT:
                     if(avatar.player_rect.x-grid_cell_size != 0 - grid_cell_size){
-                        if(!Colliders('l', avatar.position, current_map->item_list)){
+                        if(Colliders("l", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.x -= 1;
                             avatar.player_rect.x -= grid_cell_size;
                         }
@@ -589,7 +587,7 @@ public:
                 case SDLK_d:
                 case SDLK_RIGHT:
                     if(avatar.player_rect.x+grid_cell_size != (grid_width * grid_cell_size)){
-                        if(!Colliders('r', avatar.position, current_map->item_list)){
+                        if(Colliders("r", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.x += 1;
                             avatar.player_rect.x += grid_cell_size;
                         }
@@ -677,7 +675,7 @@ public:
                     }
                     PlaceItem(map_editor_current_selection, placedown);
                 }
-            break;
+                break;
             }
     }
 
@@ -688,6 +686,7 @@ public:
                 avatar.isDead = true;
             }
         }
+        //std::cout << wall_boundaries.size() << std::endl;
     }
 
     void OnRender(){
@@ -698,8 +697,8 @@ public:
         SDL_RenderClear(renderer);
         */
         SDL_RenderCopy(renderer, world_texture, NULL, &world_backround);
-
         // Draw grid lines.
+        /*
         SDL_SetRenderDrawColor(renderer, grid_line_color.r, grid_line_color.g,
                                grid_line_color.b, grid_line_color.a);
 
@@ -710,14 +709,13 @@ public:
         for (int y = 0; y < 1 + grid_height * grid_cell_size; y += grid_cell_size){
             SDL_RenderDrawLine(renderer, 0, y, window_width, y);
         }
-        
+        */
         
         for(auto &i : current_map->item_list){
             if(i.item_texture)
             SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
-            if(i.id == ITEM_WALL)
-            DrawWallEdges(&i);
         }
+        SDL_RenderCopy(renderer, wall_boundary_texture, NULL, NULL);
 
         if (mouse_active && mouse_hover) {
             SDL_SetRenderDrawColor(renderer, grid_cursor_ghost_color.r,
@@ -752,10 +750,7 @@ public:
             tmp.y += 5;
             SDL_QueryTexture(current_message, NULL, NULL, &tmp.w, &tmp.h);
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
-
         }
-
-
 
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
 
