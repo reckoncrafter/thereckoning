@@ -222,7 +222,7 @@ public:
     }
 
     SDL_Texture* RenderWallEdges(std::vector<Item> &item_list){
-        #define RWE_FILL(__x) SDL_FillRect(wall_boundaries, &__x, SDL_MapRGBA(wall_boundaries->format, 82, 49, 28, 255));
+        #define RWE_FILL(__x) SDL_FillRect(wall_boundaries, &__x, SDL_MapRGBA(wall_boundaries->format, 26, 26, 26, 255));
         SDL_Surface* wall_boundaries = SDL_CreateRGBSurfaceWithFormat(0, (grid_width * grid_cell_size), (grid_height * grid_cell_size), 32, SDL_PIXELFORMAT_RGBA32);
         const int stroke = 10;
 
@@ -309,6 +309,20 @@ public:
         return rtn;
     }
 
+    void DropShadow(SDL_Texture* _tx, SDL_Rect _rc){
+        
+        SDL_Rect new_rc = {
+            .x = _rc.x + 12,
+            .y = _rc.y + 12,
+            .w = _rc.w,
+            .h = _rc.h,
+        };
+        SDL_SetTextureColorMod(_tx, 0,0,0);
+        SDL_SetTextureAlphaMod(_tx, 50);
+        SDL_RenderCopy(renderer, _tx, NULL, &new_rc);
+        SDL_SetTextureAlphaMod(_tx, 255);
+        SDL_SetTextureColorMod(_tx, 255,255,255);
+    }
 
     void AssignTextures(Item &i){
         switch(i.id){
@@ -437,6 +451,7 @@ public:
         CHK_TXT();
 
         world_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        SDL_SetTextureBlendMode(world_texture, SDL_BLENDMODE_NONE);
 
         // ITEM_CHEST
         bmp_surf = SDL_LoadBMP("textures/chest.bmp");
@@ -738,6 +753,15 @@ public:
             
         for(auto &_enemy : enemies){
             if(current_map == _enemy.home_map){
+                DropShadow(_enemy.enemy_texture, _enemy.enemy_rect);
+
+                if(_enemy.doRandomWalk){
+                    SDL_SetTextureColorMod(_enemy.enemy_texture, 100, 100, 255);
+                }
+                else{
+                    SDL_SetTextureColorMod(_enemy.enemy_texture, 255, 255, 255);
+                }
+                
                 SDL_RenderCopy(renderer, _enemy.enemy_texture, NULL, &_enemy.enemy_rect);
             }
         }
@@ -752,9 +776,15 @@ public:
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
         }
 
+        DropShadow(avatar.player_texture, avatar.player_rect);
+
+        if(avatar.isDead)
+            SDL_SetTextureColorMod(avatar.player_texture, 255,50,50);
+
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
 
         SDL_RenderPresent(renderer);
+        SDL_RenderClear(renderer);
     }
 
     void OnCleanup(){
