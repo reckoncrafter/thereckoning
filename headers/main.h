@@ -45,18 +45,25 @@ int Colliders(const std::string steps, point ref_pos, std::vector<Item> &item_li
         }
     }
     for(auto i : item_list){
-        if(i.position.x == ref_pos.x + _x && i.position.y == ref_pos.y + _y){
+        if(i.pos.x == ref_pos.x + _x && i.pos.y == ref_pos.y + _y){
             return i.id;
         }
     }
     return 0;
 }
+struct Entity{
+    SDL_Texture* entityTexture;
+    SDL_Rect entityRect;
+    point pos;
 
-class Player{
+    void sync(){
+        entityRect.x = pos.x * grid_cell_size;
+        entityRect.y = pos.y * grid_cell_size;
+    }
+};
+
+class Player : public Entity{
 public:
-    SDL_Texture* player_texture;
-    SDL_Rect player_rect;
-    point position;
     Item inventory[10];
     Item* Hand;
     bool isDead = false;
@@ -65,29 +72,17 @@ public:
         for(auto i : inventory){
             i.id = 0;
         }
-        position = {2,2};
-        player_texture = NULL;
-        player_rect.w = grid_cell_size;
-        player_rect.h = grid_cell_size;
-    }
-
-    void sync(){
-        player_rect.x = position.x * grid_cell_size;
-        player_rect.y = position.y * grid_cell_size;
+        pos = {2,2};
+        entityTexture = NULL;
+        entityRect.w = grid_cell_size;
+        entityRect.h = grid_cell_size;
     }
 };
 
-enum __Walk{
-    _U, _D, _L, _R
-};
-
-class Enemy{
+class Enemy : public Entity{
 public:
-    SDL_Texture* enemy_texture = NULL;
-    SDL_Rect enemy_rect;
-    point position;
+    enum __Walk{ _U, _D, _L, _R };
     std::vector<__Walk> pattern;
-
     Map* home_map;
 
     int walk_counter = 0;
@@ -95,43 +90,38 @@ public:
 
     Enemy(){
         pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
-        position = {0,0};
-        enemy_rect.h = grid_cell_size;
-        enemy_rect.w = grid_cell_size;
-    }
-
-    void sync(){
-        enemy_rect.x = position.x * grid_cell_size;
-        enemy_rect.y = position.y * grid_cell_size;
+        pos = {0,0};
+        entityRect.h = grid_cell_size;
+        entityRect.w = grid_cell_size;
     }
 
     void Walk(){
         int walk = doRandomWalk? rand()%4 : pattern.at(walk_counter);
         switch(walk){
             case _U:
-                if(!Colliders("u", position, home_map->item_list) && position.y-1 >= 0){
-                    position.y -= 1;
+                if(!Colliders("u", pos, home_map->item_list) && pos.y-1 >= 0){
+                    pos.y -= 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _D:
-                if(!Colliders("d", position, home_map->item_list) && position.y+1 < GRID_HEIGHT){
-                    position.y += 1;
+                if(!Colliders("d", pos, home_map->item_list) && pos.y+1 < GRID_HEIGHT){
+                    pos.y += 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _L:
-                if(!Colliders("l", position, home_map->item_list) && position.x-1 >= 0){
-                    position.x -= 1;
+                if(!Colliders("l", pos, home_map->item_list) && pos.x-1 >= 0){
+                    pos.x -= 1;
                     sync();
                 }
                 walk_counter++;
                 break;
             case _R:
-                if(!Colliders("r", position, home_map->item_list) && position.x+1 < GRID_WIDTH){
-                    position.x += 1;
+                if(!Colliders("r", pos, home_map->item_list) && pos.x+1 < GRID_WIDTH){
+                    pos.x += 1;
                     sync();
                 }
                 walk_counter++;
@@ -231,11 +221,8 @@ public:
             && wall.id != ITEM_AIRWALL)
                 continue;
 
-            bool u=true,d=true,l=true,r=true;
-
-
             point origin = {wall.rect.x, wall.rect.y};
-            point wp = wall.position;
+            point wp = wall.pos;
             std::vector<Item>* il = &current_map->item_list;
 
             if(Colliders("u", wp, *il) != wall.id){
@@ -246,7 +233,6 @@ public:
                     .h = stroke,
                 };
                 RWE_FILL(_h);
-                u = false;
             }
             if(Colliders("d", wp, *il) != wall.id){
                 SDL_Rect _h = {
@@ -256,7 +242,6 @@ public:
                     .h = stroke,    
                 };
                 RWE_FILL(_h);
-                d = false;
             }
             if(Colliders("l", wp, *il) != wall.id){
                 SDL_Rect _v = {
@@ -266,7 +251,6 @@ public:
                     .h = grid_cell_size,
                 };
                 RWE_FILL(_v);
-                l = false;
             }
             if(Colliders("r", wp, *il) != wall.id){
                 SDL_Rect _v = {
@@ -276,7 +260,6 @@ public:
                     .h = grid_cell_size,
                 };
                 RWE_FILL(_v);
-                r = false;
             }
             
             SDL_Rect sq = {
@@ -355,7 +338,7 @@ public:
     }
 
     void SetItemPosition(Item &i, point pos){
-        i.position = pos;
+        i.pos = pos;
         i.rect.x = pos.x * grid_cell_size;
         i.rect.y = pos.y * grid_cell_size;
     }
@@ -364,7 +347,7 @@ public:
         for(auto &i : current_map->item_list){
             i.rect.w = grid_cell_size;
             i.rect.h = grid_cell_size;
-            SetItemPosition(i, i.position);
+            SetItemPosition(i, i.pos);
         }
         for(auto &i : current_map->item_list){
             AssignTextures(i);
@@ -375,7 +358,7 @@ public:
     void PlaceItem(int id, point pos){
         Item newItem;
         newItem.id = id;
-        newItem.position = pos;
+        newItem.pos = pos;
         current_map->item_list.push_back(newItem);
         InitItems();
     }
@@ -384,8 +367,8 @@ public:
         for(int i = 0; i < init_world.MAP_NUM; i++){
             for(int j = 0; j < 4; j++){
                 Enemy tmp;
-                tmp.position.x = rand()%GRID_WIDTH;
-                tmp.position.y = rand()&GRID_HEIGHT;
+                tmp.pos.x = rand()%GRID_WIDTH;
+                tmp.pos.y = rand()&GRID_HEIGHT;
                 tmp.home_map = &init_world.maps[i];
                 enemies.push_back(tmp);
             }
@@ -444,7 +427,7 @@ public:
         // Player Texture
         CHK_TXT();
 
-        avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        avatar.entityTexture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // World Texture
         bmp_surf = SDL_LoadBMP("textures/world.bmp");
@@ -496,7 +479,7 @@ public:
             
         // this should be changed
         for(auto &_enemy : enemies){
-            _enemy.enemy_texture = bunny_texture;
+            _enemy.entityTexture = bunny_texture;
         }
 
         // ITEM_PS
@@ -510,7 +493,7 @@ public:
 
     int OnItem(){
         for(auto &i : current_map->item_list){
-            if(avatar.position == i.position){
+            if(avatar.pos == i.pos){
                 return i.id;
             }
         }
@@ -553,15 +536,15 @@ public:
                 switch (Event->key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    if(avatar.player_rect.y-grid_cell_size != (0 - grid_cell_size)){
-                        if(Colliders("u", avatar.position, current_map->item_list) != ITEM_WALL){
-                            avatar.position.y -= 1;
+                    if(avatar.entityRect.y-grid_cell_size != (0 - grid_cell_size)){
+                        if(Colliders("u", avatar.pos, current_map->item_list) != ITEM_WALL){
+                            avatar.pos.y -= 1;
                             avatar.sync();
                         }
                     }
                     else if(current_map->GetNextMap('u') != nullptr){
                         current_map = current_map->GetNextMap('u');
-                        avatar.position.y = grid_height - 1;
+                        avatar.pos.y = grid_height - 1;
                         avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -569,15 +552,15 @@ public:
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    if(avatar.player_rect.y+grid_cell_size != (grid_height * grid_cell_size)){
-                        if(Colliders("d", avatar.position, current_map->item_list) != ITEM_WALL){
-                            avatar.position.y += 1;
-                            avatar.player_rect.y += grid_cell_size;
+                    if(avatar.entityRect.y+grid_cell_size != (grid_height * grid_cell_size)){
+                        if(Colliders("d", avatar.pos, current_map->item_list) != ITEM_WALL){
+                            avatar.pos.y += 1;
+                            avatar.entityRect.y += grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('d') != nullptr){
                         current_map = current_map->GetNextMap('d');
-                        avatar.position.y = 0;
+                        avatar.pos.y = 0;
                         avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -585,15 +568,15 @@ public:
                     break;
                 case SDLK_a:
                 case SDLK_LEFT:
-                    if(avatar.player_rect.x-grid_cell_size != 0 - grid_cell_size){
-                        if(Colliders("l", avatar.position, current_map->item_list) != ITEM_WALL){
-                            avatar.position.x -= 1;
-                            avatar.player_rect.x -= grid_cell_size;
+                    if(avatar.entityRect.x-grid_cell_size != 0 - grid_cell_size){
+                        if(Colliders("l", avatar.pos, current_map->item_list) != ITEM_WALL){
+                            avatar.pos.x -= 1;
+                            avatar.entityRect.x -= grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('l') != nullptr){
                         current_map = current_map->GetNextMap('l');
-                        avatar.position.x = grid_width - 1;
+                        avatar.pos.x = grid_width - 1;
                         avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -601,15 +584,15 @@ public:
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    if(avatar.player_rect.x+grid_cell_size != (grid_width * grid_cell_size)){
-                        if(Colliders("r", avatar.position, current_map->item_list) != ITEM_WALL){
-                            avatar.position.x += 1;
-                            avatar.player_rect.x += grid_cell_size;
+                    if(avatar.entityRect.x+grid_cell_size != (grid_width * grid_cell_size)){
+                        if(Colliders("r", avatar.pos, current_map->item_list) != ITEM_WALL){
+                            avatar.pos.x += 1;
+                            avatar.entityRect.x += grid_cell_size;
                         }
                     }
                     else if(current_map->GetNextMap('r') != nullptr){
                         current_map = current_map->GetNextMap('r');
-                        avatar.position.x = 0;
+                        avatar.pos.x = 0;
                         avatar.sync();
                         InitItems();
                         SDL_SetWindowTitle(window, current_map->name.c_str());
@@ -622,7 +605,7 @@ public:
                 case SDLK_p:
                     for(auto i : current_map->item_list){
                         std::cout << "id: " << i.id << std::endl;
-                        std::cout << "pos: " << i.position.x << ", " << i.position.y << std::endl;
+                        std::cout << "pos: " << i.pos.x << ", " << i.pos.y << std::endl;
                         std::cout << std::endl;
                     }
                     break;
@@ -673,7 +656,7 @@ public:
                                    (Event->motion.y / grid_cell_size)};
                 if(map_editor_current_selection == ITEM_AIR){
                     for(int i = 0; i < current_map->item_list.size(); i++){
-                        if(current_map->item_list.at(i).position == placedown){
+                        if(current_map->item_list.at(i).pos == placedown){
                             current_map->item_list.erase(current_map->item_list.begin() + i);
                         }
                     }
@@ -681,10 +664,10 @@ public:
                 else{
                     for(int i = 0; i < current_map->item_list.size(); i++){
                         if(current_map->item_list.at(i).id == map_editor_current_selection 
-                        && current_map->item_list.at(i).position == placedown){
+                        && current_map->item_list.at(i).pos == placedown){
                             break;
                         }
-                        if(current_map->item_list.at(i).position == placedown){
+                        if(current_map->item_list.at(i).pos == placedown){
                             current_map->item_list.erase(current_map->item_list.begin() + i);
                         }
                     }
@@ -696,8 +679,8 @@ public:
 
     void OnLoop(){
         for(auto &_enemy : enemies){
-            if(avatar.position == _enemy.position && current_map == _enemy.home_map){
-                SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
+            if(avatar.pos == _enemy.pos && current_map == _enemy.home_map){
+                SDL_SetTextureColorMod(avatar.entityTexture, 255, 140, 140);
                 avatar.isDead = true;
             }
         }
@@ -753,16 +736,16 @@ public:
             
         for(auto &_enemy : enemies){
             if(current_map == _enemy.home_map){
-                DropShadow(_enemy.enemy_texture, _enemy.enemy_rect);
+                DropShadow(_enemy.entityTexture, _enemy.entityRect);
 
                 if(_enemy.doRandomWalk){
-                    SDL_SetTextureColorMod(_enemy.enemy_texture, 100, 100, 255);
+                    SDL_SetTextureColorMod(_enemy.entityTexture, 100, 100, 255);
                 }
                 else{
-                    SDL_SetTextureColorMod(_enemy.enemy_texture, 255, 255, 255);
+                    SDL_SetTextureColorMod(_enemy.entityTexture, 255, 255, 255);
                 }
                 
-                SDL_RenderCopy(renderer, _enemy.enemy_texture, NULL, &_enemy.enemy_rect);
+                SDL_RenderCopy(renderer, _enemy.entityTexture, NULL, &_enemy.entityRect);
             }
         }
 
@@ -776,12 +759,12 @@ public:
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
         }
 
-        DropShadow(avatar.player_texture, avatar.player_rect);
+        DropShadow(avatar.entityTexture, avatar.entityRect);
 
         if(avatar.isDead)
-            SDL_SetTextureColorMod(avatar.player_texture, 255,50,50);
+            SDL_SetTextureColorMod(avatar.entityTexture, 255,50,50);
 
-        SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
+        SDL_RenderCopy(renderer, avatar.entityTexture, NULL, &avatar.entityRect);
 
         SDL_RenderPresent(renderer);
         SDL_RenderClear(renderer);

@@ -54,7 +54,7 @@ int main(){
 
                 Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
 
-                Game.avatar.position = {2,2};
+                Game.avatar.pos = {2,2};
                 Game.avatar.sync();
             }
 

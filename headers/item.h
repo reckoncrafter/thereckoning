@@ -10,11 +10,11 @@ public:
     int id;
     SDL_Rect rect;
     SDL_Texture* item_texture;
-    point position;
+    point pos;
 
     Item(){
         item_texture = NULL;
-        position = {0,0};
+        pos = {0,0};
         id = 0;
     }
 };

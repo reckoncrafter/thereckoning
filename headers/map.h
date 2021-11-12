@@ -84,7 +84,7 @@ public:
 
         for(int j = 0; j < MAP_NUM; j++){
             for(auto i : maps[j].item_list){
-                fout << j << ' ' << i.id << ' ' << i.position.x << ' ' << i.position.y;
+                fout << j << ' ' << i.id << ' ' << i.pos.x << ' ' << i.pos.y;
                 fout << std::endl;
             }
         }
@@ -107,14 +107,14 @@ public:
             fileItem.id = stoi(in);
 
             fin >> in;
-            fileItem.position.x = stoi(in);
+            fileItem.pos.x = stoi(in);
 
             fin >> in;
-            fileItem.position.y = stoi(in);
+            fileItem.pos.y = stoi(in);
 
             if(mapn < MAP_NUM){
                 maps[mapn].item_list.push_back(fileItem);
-                //std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.position.x << "," << fileItem.position.y << ")" << std::endl;
+                //std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.pos.x << "," << fileItem.pos.y << ")" << std::endl;
             }
         }while(!fin.eof());
 
@@ -126,15 +126,15 @@ public:
         for(int i = 0; i < 9; i++){
             test_items[i].id = ITEM_TOTEM;
         }
-        test_items[0].position = {1, 1};
-        test_items[1].position = {GRID_WIDTH/2, 1};
-        test_items[2].position = {GRID_WIDTH - 2, 1};
-        test_items[3].position = {1, GRID_HEIGHT/2};
-        test_items[4].position = {GRID_WIDTH/2, GRID_HEIGHT/2};
-        test_items[5].position = {GRID_WIDTH - 2, GRID_HEIGHT/2};
-        test_items[6].position = {1, GRID_HEIGHT - 2};
-        test_items[7].position = {GRID_WIDTH/2, GRID_HEIGHT - 2};
-        test_items[8].position = {GRID_WIDTH - 2 ,GRID_HEIGHT - 2};
+        test_items[0].pos = {1, 1};
+        test_items[1].pos = {GRID_WIDTH/2, 1};
+        test_items[2].pos = {GRID_WIDTH - 2, 1};
+        test_items[3].pos = {1, GRID_HEIGHT/2};
+        test_items[4].pos = {GRID_WIDTH/2, GRID_HEIGHT/2};
+        test_items[5].pos = {GRID_WIDTH - 2, GRID_HEIGHT/2};
+        test_items[6].pos = {1, GRID_HEIGHT - 2};
+        test_items[7].pos = {GRID_WIDTH/2, GRID_HEIGHT - 2};
+        test_items[8].pos = {GRID_WIDTH - 2 ,GRID_HEIGHT - 2};
 
         for(int i = 0; i < MAP_NUM; i++){
             maps[i].item_list.push_back(test_items[i]);
