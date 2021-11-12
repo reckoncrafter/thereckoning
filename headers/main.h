@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <array>
 #include <random>
 #include <time.h>
 #include <unistd.h>
@@ -22,6 +23,35 @@
 const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
 const int grid_height = GRID_WIDTH;
+
+int Colliders(const std::string steps, point ref_pos, std::vector<Item> &item_list){
+    int _x = 0;
+    int _y = 0;
+    for(auto i : steps){
+        switch(i){
+            case 'u':
+                _y--;
+                break;
+            case 'd':
+                _y++;
+                break;
+            case 'l':
+                _x--;
+                break;
+            case 'r':
+                _x++;
+                break;
+            default:
+                break;
+        }
+    }
+    for(auto i : item_list){
+        if(i.position.x == ref_pos.x + _x && i.position.y == ref_pos.y + _y){
+            return i.id;
+        }
+    }
+    return 0;
+}
 
 class Player{
 public:
@@ -62,10 +92,11 @@ public:
     Map* home_map;
 
     int walk_counter = 0;
+    bool doRandomWalk = false;
 
     Enemy(){
         pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
-        position = {10,5};
+        position = {0,0};
         enemy_rect.h = grid_cell_size;
         enemy_rect.w = grid_cell_size;
     }
@@ -76,35 +107,43 @@ public:
     }
 
     void Walk(){
-        switch(pattern.at(walk_counter)){
+        int walk = doRandomWalk? rand()%4 : pattern.at(walk_counter);
+        switch(walk){
             case _U:
-                position.y -= 1;
+                if(!Colliders("u", position, home_map->item_list) && position.y-1 >= 0){
+                    position.y -= 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _D:
-                position.y += 1;
+                if(!Colliders("d", position, home_map->item_list) && position.y+1 < GRID_HEIGHT){
+                    position.y += 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _L:
-                position.x -= 1;
+                if(!Colliders("l", position, home_map->item_list) && position.x-1 >= 0){
+                    position.x -= 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
             case _R:
-                position.x += 1;
+                if(!Colliders("r", position, home_map->item_list) && position.x+1 < GRID_WIDTH){
+                    position.x += 1;
+                    sync();
+                }
                 walk_counter++;
-                sync();
                 break;
         }
         if(walk_counter >= pattern.size()){
             walk_counter = 0;
         }
     }
+
 };
-
-
 
 class Root{
 public:
@@ -122,6 +161,13 @@ public:
     // + 1 so that the last grid lines fit in the screen.
     int window_width = (grid_width * grid_cell_size) + 1;
     int window_height = (grid_height * grid_cell_size) + 1;
+
+    SDL_Rect world_backround = {
+        .x = 0,
+        .y = 0,
+        .w = (grid_cell_size * grid_width),
+        .h = (grid_cell_size * grid_height),
+    };
 
     SDL_Rect Inventory_Menu;
 
@@ -143,7 +189,8 @@ public:
     SDL_Color grid_cursor_color = grid_background;
 
     Player avatar;
-    Enemy enemy;
+
+    std::vector<Enemy> enemies;
 
     World init_world;
     Map* current_map = &init_world.maps[init_world.bb];
@@ -151,6 +198,9 @@ public:
     int map_editor_current_selection = ITEM_AIR;
 
     // Textures
+    SDL_Texture* world_texture;
+    SDL_Texture* wall_boundary_texture;
+
     SDL_Texture* chest_texture;
     SDL_Texture* totem_texture;
     SDL_Texture* wall_texture;
@@ -162,7 +212,7 @@ public:
     // Message Textures
     std::vector<SDL_Texture*> msg_textures;
     SDL_Texture* current_message;
-    
+
     bool render_message = false;
 
 public:
@@ -170,6 +220,109 @@ public:
     Root() {
         Surf_Display = NULL;
         Running = true;
+    }
+
+    SDL_Texture* RenderWallEdges(std::vector<Item> &item_list){
+        #define RWE_FILL(__x) SDL_FillRect(wall_boundaries, &__x, SDL_MapRGBA(wall_boundaries->format, 26, 26, 26, 255));
+        SDL_Surface* wall_boundaries = SDL_CreateRGBSurfaceWithFormat(0, (grid_width * grid_cell_size), (grid_height * grid_cell_size), 32, SDL_PIXELFORMAT_RGBA32);
+        const int stroke = 10;
+
+        for(auto &wall : item_list){
+            if(wall.id != ITEM_WALL 
+            && wall.id != ITEM_AIRWALL)
+                continue;
+
+            bool u=true,d=true,l=true,r=true;
+
+
+            point origin = {wall.rect.x, wall.rect.y};
+            point wp = wall.position;
+            std::vector<Item>* il = &current_map->item_list;
+
+            if(Colliders("u", wp, *il) != wall.id){
+                SDL_Rect _h = {
+                    .x = origin.x,
+                    .y = origin.y,
+                    .w = grid_cell_size,
+                    .h = stroke,
+                };
+                RWE_FILL(_h);
+                u = false;
+            }
+            if(Colliders("d", wp, *il) != wall.id){
+                SDL_Rect _h = {
+                    .x = origin.x,
+                    .y = origin.y + (grid_cell_size - stroke),
+                    .w = grid_cell_size,
+                    .h = stroke,    
+                };
+                RWE_FILL(_h);
+                d = false;
+            }
+            if(Colliders("l", wp, *il) != wall.id){
+                SDL_Rect _v = {
+                    .x = origin.x,
+                    .y = origin.y,
+                    .w = stroke,
+                    .h = grid_cell_size,
+                };
+                RWE_FILL(_v);
+                l = false;
+            }
+            if(Colliders("r", wp, *il) != wall.id){
+                SDL_Rect _v = {
+                    .x = origin.x + (grid_cell_size - stroke),
+                    .y = origin.y,
+                    .w = stroke,                
+                    .h = grid_cell_size,
+                };
+                RWE_FILL(_v);
+                r = false;
+            }
+            
+            SDL_Rect sq = {
+                .w = stroke,
+                .h = stroke,
+            };
+            if(Colliders("ul", wp, *il) != wall.id){
+                sq.x = origin.x;
+                sq.y = origin.y;
+                RWE_FILL(sq);
+            }
+            if(Colliders("ur", wp, *il) != wall.id){
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y;
+                RWE_FILL(sq);
+            }
+            if(Colliders("dl", wp, *il) != wall.id){
+                sq.x = origin.x;
+                sq.y = origin.y + (grid_cell_size - stroke);
+                RWE_FILL(sq);
+            }
+            if(Colliders("dr", wp, *il) != wall.id){
+                sq.x = origin.x + (grid_cell_size - stroke);
+                sq.y = origin.y + (grid_cell_size - stroke);
+                RWE_FILL(sq);
+            }
+        }
+        SDL_Texture* rtn = SDL_CreateTextureFromSurface(renderer, wall_boundaries);
+        SDL_FreeSurface(wall_boundaries);
+        return rtn;
+    }
+
+    void DropShadow(SDL_Texture* _tx, SDL_Rect _rc){
+        
+        SDL_Rect new_rc = {
+            .x = _rc.x + 12,
+            .y = _rc.y + 12,
+            .w = _rc.w,
+            .h = _rc.h,
+        };
+        SDL_SetTextureColorMod(_tx, 0,0,0);
+        SDL_SetTextureAlphaMod(_tx, 50);
+        SDL_RenderCopy(renderer, _tx, NULL, &new_rc);
+        SDL_SetTextureAlphaMod(_tx, 255);
+        SDL_SetTextureColorMod(_tx, 255,255,255);
     }
 
     void AssignTextures(Item &i){
@@ -217,6 +370,7 @@ public:
         for(auto &i : current_map->item_list){
             AssignTextures(i);
         }
+        wall_boundary_texture = RenderWallEdges(current_map->item_list);
     }
 
     void PlaceItem(int id, point pos){
@@ -227,38 +381,20 @@ public:
         InitItems();
     }
 
-    bool Colliders(char dir){
-        switch(dir){
-            case 'u':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y - 1){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'd':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x && i.position.y == avatar.position.y + 1){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'l':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x - 1 && i.position.y == avatar.position.y){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
-            case 'r':
-                for(auto i : current_map->item_list){
-                    if(i.position.x == avatar.position.x + 1 && i.position.y == avatar.position.y){
-                        if(i.id == ITEM_WALL) return true;
-                    }
-                }
-                break;
+    void EnemySpawn(){
+        for(int i = 0; i < init_world.MAP_NUM; i++){
+            for(int j = 0; j < 4; j++){
+                Enemy tmp;
+                tmp.position.x = rand()%GRID_WIDTH;
+                tmp.position.y = rand()&GRID_HEIGHT;
+                tmp.home_map = &init_world.maps[i];
+                enemies.push_back(tmp);
+            }
         }
-        return false;
+        for(auto &_enemy : enemies){
+            _enemy.sync();
+            _enemy.walk_counter = rand()%8;
+        }
     }
 
     bool OnInit(){
@@ -287,15 +423,15 @@ public:
         Dialogue_Box.x = grid_cell_size * 2;
         Dialogue_Box.y = grid_cell_size * 2;
 
+
+        // Players and NPCs
         avatar.sync();
-        enemy.sync();
+        EnemySpawn();
 
         Mono = TTF_OpenFont("DOS.ttf", FONT_SIZE);
         if(Mono == NULL){
             return EXIT_FAILURE;
         }
-
-        enemy.home_map = &init_world.maps[init_world.bb];
 
         return true;
     }
@@ -310,6 +446,13 @@ public:
 
         avatar.player_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
+        // World Texture
+        bmp_surf = SDL_LoadBMP("textures/world.bmp");
+        CHK_TXT();
+
+        world_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        SDL_SetTextureBlendMode(world_texture, SDL_BLENDMODE_NONE);
+
         // ITEM_CHEST
         bmp_surf = SDL_LoadBMP("textures/chest.bmp");
         CHK_TXT();
@@ -323,16 +466,20 @@ public:
         totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // ITEM_WALL
-        bmp_surf = SDL_LoadBMP("textures/wall.bmp");
+        bmp_surf = SDL_LoadBMP("textures/wall_texture.bmp");
         CHK_TXT();
 
         wall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        airwall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        SDL_SetTextureColorMod(airwall_texture, 255, 60, 255);
 
+        /*
         // ITEM_AIRWALL
         bmp_surf = SDL_LoadBMP("textures/airwall.bmp");
         CHK_TXT();
 
         airwall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+        */
 
         // ITEM_CHEF
         bmp_surf = SDL_LoadBMP("textures/griller.bmp");
@@ -346,8 +493,11 @@ public:
 
         bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
         
-        enemy.enemy_texture = bunny_texture;
+            
         // this should be changed
+        for(auto &_enemy : enemies){
+            _enemy.enemy_texture = bunny_texture;
+        }
 
         // ITEM_PS
         bmp_surf = SDL_LoadBMP("textures/pissy_shitties.bmp");
@@ -404,7 +554,7 @@ public:
                 case SDLK_w:
                 case SDLK_UP:
                     if(avatar.player_rect.y-grid_cell_size != (0 - grid_cell_size)){
-                        if(!Colliders('u')){
+                        if(Colliders("u", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.y -= 1;
                             avatar.sync();
                         }
@@ -420,7 +570,7 @@ public:
                 case SDLK_s:
                 case SDLK_DOWN:
                     if(avatar.player_rect.y+grid_cell_size != (grid_height * grid_cell_size)){
-                        if(!Colliders('d')){
+                        if(Colliders("d", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.y += 1;
                             avatar.player_rect.y += grid_cell_size;
                         }
@@ -436,7 +586,7 @@ public:
                 case SDLK_a:
                 case SDLK_LEFT:
                     if(avatar.player_rect.x-grid_cell_size != 0 - grid_cell_size){
-                        if(!Colliders('l')){
+                        if(Colliders("l", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.x -= 1;
                             avatar.player_rect.x -= grid_cell_size;
                         }
@@ -452,7 +602,7 @@ public:
                 case SDLK_d:
                 case SDLK_RIGHT:
                     if(avatar.player_rect.x+grid_cell_size != (grid_width * grid_cell_size)){
-                        if(!Colliders('r')){
+                        if(Colliders("r", avatar.position, current_map->item_list) != ITEM_WALL){
                             avatar.position.x += 1;
                             avatar.player_rect.x += grid_cell_size;
                         }
@@ -542,24 +692,30 @@ public:
                     }
                     PlaceItem(map_editor_current_selection, placedown);
                 }
-            break;
+                break;
             }
     }
 
     void OnLoop(){
-        if(avatar.position == enemy.position){
-            SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
-            avatar.isDead = true;
+        for(auto &_enemy : enemies){
+            if(avatar.position == _enemy.position && current_map == _enemy.home_map){
+                SDL_SetTextureColorMod(avatar.player_texture, 255, 140, 140);
+                avatar.isDead = true;
+            }
         }
+        //std::cout << wall_boundaries.size() << std::endl;
     }
 
     void OnRender(){
         // Draw grid background.
+        /*
         SDL_SetRenderDrawColor(renderer, grid_background.r, grid_background.g,
             grid_background.b, grid_background.a);
         SDL_RenderClear(renderer);
-
+        */
+        SDL_RenderCopy(renderer, world_texture, NULL, &world_backround);
         // Draw grid lines.
+        /*
         SDL_SetRenderDrawColor(renderer, grid_line_color.r, grid_line_color.g,
                                grid_line_color.b, grid_line_color.a);
 
@@ -570,12 +726,13 @@ public:
         for (int y = 0; y < 1 + grid_height * grid_cell_size; y += grid_cell_size){
             SDL_RenderDrawLine(renderer, 0, y, window_width, y);
         }
-        
+        */
         
         for(auto &i : current_map->item_list){
             if(i.item_texture)
             SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
         }
+        SDL_RenderCopy(renderer, wall_boundary_texture, NULL, NULL);
 
         if (mouse_active && mouse_hover) {
             SDL_SetRenderDrawColor(renderer, grid_cursor_ghost_color.r,
@@ -595,9 +752,21 @@ public:
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
             SDL_RenderFillRect(renderer, &Inventory_Menu);
         }
+            
+        for(auto &_enemy : enemies){
+            if(current_map == _enemy.home_map){
+                DropShadow(_enemy.enemy_texture, _enemy.enemy_rect);
 
-        if(current_map == enemy.home_map)
-            SDL_RenderCopy(renderer, enemy.enemy_texture, NULL, &enemy.enemy_rect);
+                if(_enemy.doRandomWalk){
+                    SDL_SetTextureColorMod(_enemy.enemy_texture, 100, 100, 255);
+                }
+                else{
+                    SDL_SetTextureColorMod(_enemy.enemy_texture, 255, 255, 255);
+                }
+                
+                SDL_RenderCopy(renderer, _enemy.enemy_texture, NULL, &_enemy.enemy_rect);
+            }
+        }
 
         if(render_message){
             SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
@@ -607,14 +776,17 @@ public:
             tmp.y += 5;
             SDL_QueryTexture(current_message, NULL, NULL, &tmp.w, &tmp.h);
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
-
         }
 
+        DropShadow(avatar.player_texture, avatar.player_rect);
 
+        if(avatar.isDead)
+            SDL_SetTextureColorMod(avatar.player_texture, 255,50,50);
 
         SDL_RenderCopy(renderer, avatar.player_texture, NULL, &avatar.player_rect);
 
         SDL_RenderPresent(renderer);
+        SDL_RenderClear(renderer);
     }
 
     void OnCleanup(){
