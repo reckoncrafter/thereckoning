@@ -12,7 +12,7 @@
 
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
-#define GRID_CELL_SIZE 24
+#define GRID_CELL_SIZE 28
 #define FONT_SIZE 16
 
 #include "item_ids.h"
