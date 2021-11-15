@@ -188,7 +188,7 @@ public:
 
     // Textures
     SDL_Texture* world_texture;
-    SDL_Texture* wall_boundary_texture;
+    //SDL_Texture* wall_boundary_texture;
 
     SDL_Texture* chest_texture;
     SDL_Texture* totem_texture;
@@ -352,7 +352,7 @@ public:
         for(auto &i : current_map->item_list){
             AssignTextures(i);
         }
-        wall_boundary_texture = RenderWallEdges(current_map->item_list);
+        //wall_boundary_texture = RenderWallEdges(current_map->item_list);
     }
 
     void PlaceItem(int id, point pos){
@@ -423,7 +423,7 @@ public:
 
 #define CHK_TXT() if(!bmp_surf) return false;
 
-        SDL_Surface* bmp_surf = SDL_LoadBMP("textures/cat.bmp");
+        SDL_Surface* bmp_surf = SDL_LoadBMP("textures/ghost.bmp");
         // Player Texture
         CHK_TXT();
 
@@ -437,7 +437,7 @@ public:
         SDL_SetTextureBlendMode(world_texture, SDL_BLENDMODE_NONE);
 
         // ITEM_CHEST
-        bmp_surf = SDL_LoadBMP("textures/chest.bmp");
+        bmp_surf = SDL_LoadBMP("textures/placeholder.bmp"); // CHANGE
         CHK_TXT();
 
         chest_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
@@ -449,7 +449,7 @@ public:
         totem_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // ITEM_WALL
-        bmp_surf = SDL_LoadBMP("textures/wall_texture.bmp");
+        bmp_surf = SDL_LoadBMP("textures/placeholder.bmp");
         CHK_TXT();
 
         wall_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
@@ -471,7 +471,7 @@ public:
         chef_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
         // ITEM_BUNNY
-        bmp_surf = SDL_LoadBMP("textures/bunny.bmp");
+        bmp_surf = SDL_LoadBMP("textures/person.bmp");
         CHK_TXT();
 
         bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
@@ -483,7 +483,7 @@ public:
         }
 
         // ITEM_PS
-        bmp_surf = SDL_LoadBMP("textures/pissy_shitties.bmp");
+        bmp_surf = SDL_LoadBMP("textures/placeholder.bmp"); // change
         CHK_TXT();
 
         ps_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
@@ -713,7 +713,7 @@ public:
             if(i.item_texture)
             SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
         }
-        SDL_RenderCopy(renderer, wall_boundary_texture, NULL, NULL);
+        //SDL_RenderCopy(renderer, wall_boundary_texture, NULL, NULL);
 
         if (mouse_active && mouse_hover) {
             SDL_SetRenderDrawColor(renderer, grid_cursor_ghost_color.r,

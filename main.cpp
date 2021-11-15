@@ -52,7 +52,7 @@ int main(){
                 Game.avatar.isDead = false;
                 Game.current_map = &Game.init_world.maps[Game.init_world.bb];
 
-                Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
+                //Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
 
                 Game.avatar.pos = {2,2};
                 Game.avatar.sync();
