@@ -55,23 +55,53 @@ struct Entity{
     SDL_Texture* entityTexture;
     SDL_Rect entityRect;
     point pos;
+    Map* home_map;
 
     void sync(){
         entityRect.x = pos.x * grid_cell_size;
         entityRect.y = pos.y * grid_cell_size;
     }
+    
+    // Checks if entity "e" is within range "r" of the Entity executing this funciton
+    bool EntityinRange(Entity &e, int r){
+        if(abs(e.pos.x - pos.x) < r || abs(e.pos.y - pos.y) < r){
+            return true;
+        }
+        return false;
+    }
+    bool EntityCollision(std::string steps, Entity &e){
+        int _x = 0;
+        int _y = 0;
+        for(auto i : steps){
+            switch(i){
+                case 'u':
+                    _y--;
+                    break;
+                case 'd':
+                    _y++;
+                    break;
+                case 'l':
+                    _x--;
+                    break;
+                case 'r':
+                    _x++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if(e.pos.x == pos.x + _x && e.pos.y == pos.y + _y && e.home_map == home_map){
+            return true;
+        }
+        return false;
+    }
 };
 
 class Player : public Entity{
 public:
-    Item inventory[10];
-    Item* Hand;
     bool isDead = false;
 
     Player(){
-        for(auto i : inventory){
-            i.id = 0;
-        }
         pos = {2,2};
         entityTexture = NULL;
         entityRect.w = grid_cell_size;
@@ -83,7 +113,6 @@ class Enemy : public Entity{
 public:
     enum __Walk{ _U, _D, _L, _R };
     std::vector<__Walk> pattern;
-    Map* home_map;
 
     int walk_counter = 0;
     bool doRandomWalk = false;
@@ -95,34 +124,62 @@ public:
         entityRect.w = grid_cell_size;
     }
 
+    // Basic beeline path
+    void GoToEntity(Entity &e, std::vector<Enemy> &neighbors){
+        auto cl = [this, neighbors](std::string steps){
+            if(Colliders(steps, pos, home_map->item_list)){
+                return true;
+            }
+            for(auto i : neighbors){
+                if(EntityCollision(steps, i)){
+                    return true;
+                }
+            }
+            return false;
+        };
+        // &e is to the left
+        if(e.pos.x - pos.x < 0 && !cl("l")){
+            pos.x--;
+        }
+        // &e is to the right
+        if(e.pos.x - pos.x > 0 && !cl("r")){
+            pos.x++;
+        }
+        // &e is above
+        if(e.pos.y - pos.y < 0 && !cl("u")){
+            pos.y--;
+        }
+        // &e is below
+        if(e.pos.y - pos.y > 0 && !cl("d")){
+            pos.y++;
+        }
+        sync();
+    }
+
     void Walk(){
         int walk = doRandomWalk? rand()%4 : pattern.at(walk_counter);
         switch(walk){
             case _U:
                 if(!Colliders("u", pos, home_map->item_list) && pos.y-1 >= 0){
                     pos.y -= 1;
-                    sync();
                 }
                 walk_counter++;
                 break;
             case _D:
                 if(!Colliders("d", pos, home_map->item_list) && pos.y+1 < GRID_HEIGHT){
                     pos.y += 1;
-                    sync();
                 }
                 walk_counter++;
                 break;
             case _L:
                 if(!Colliders("l", pos, home_map->item_list) && pos.x-1 >= 0){
                     pos.x -= 1;
-                    sync();
                 }
                 walk_counter++;
                 break;
             case _R:
                 if(!Colliders("r", pos, home_map->item_list) && pos.x+1 < GRID_WIDTH){
                     pos.x += 1;
-                    sync();
                 }
                 walk_counter++;
                 break;
@@ -130,6 +187,7 @@ public:
         if(walk_counter >= pattern.size()){
             walk_counter = 0;
         }
+        sync();
     }
 
 };
@@ -530,6 +588,15 @@ public:
         if(Event->type == SDL_QUIT) {
             Running = false;
         }
+        auto cl = [&](std::string steps){
+            if(Colliders("u", avatar.pos, current_map->item_list) == ITEM_WALL){
+                return false;
+            }
+            if(avatar.isDead){
+                return false;
+            }
+            return true;
+        };
             //printf(" %i,%i ", grid_cursor.x, grid_cursor.y);
             switch (Event->type) {
             case SDL_KEYDOWN:
@@ -537,7 +604,7 @@ public:
                 case SDLK_w:
                 case SDLK_UP:
                     if(avatar.entityRect.y-grid_cell_size != (0 - grid_cell_size)){
-                        if(Colliders("u", avatar.pos, current_map->item_list) != ITEM_WALL){
+                        if(cl("u")){
                             avatar.pos.y -= 1;
                             avatar.sync();
                         }
@@ -553,7 +620,7 @@ public:
                 case SDLK_s:
                 case SDLK_DOWN:
                     if(avatar.entityRect.y+grid_cell_size != (grid_height * grid_cell_size)){
-                        if(Colliders("d", avatar.pos, current_map->item_list) != ITEM_WALL){
+                        if(cl("d")){
                             avatar.pos.y += 1;
                             avatar.entityRect.y += grid_cell_size;
                         }
@@ -569,7 +636,7 @@ public:
                 case SDLK_a:
                 case SDLK_LEFT:
                     if(avatar.entityRect.x-grid_cell_size != 0 - grid_cell_size){
-                        if(Colliders("l", avatar.pos, current_map->item_list) != ITEM_WALL){
+                        if(cl("l")){
                             avatar.pos.x -= 1;
                             avatar.entityRect.x -= grid_cell_size;
                         }
@@ -585,7 +652,7 @@ public:
                 case SDLK_d:
                 case SDLK_RIGHT:
                     if(avatar.entityRect.x+grid_cell_size != (grid_width * grid_cell_size)){
-                        if(Colliders("r", avatar.pos, current_map->item_list) != ITEM_WALL){
+                        if(cl("r")){
                             avatar.pos.x += 1;
                             avatar.entityRect.x += grid_cell_size;
                         }
@@ -736,14 +803,16 @@ public:
             
         for(auto &_enemy : enemies){
             if(current_map == _enemy.home_map){
-                DropShadow(_enemy.entityTexture, _enemy.entityRect);
+                //DropShadow(_enemy.entityTexture, _enemy.entityRect);
 
+                /*
                 if(_enemy.doRandomWalk){
                     SDL_SetTextureColorMod(_enemy.entityTexture, 100, 100, 255);
                 }
                 else{
                     SDL_SetTextureColorMod(_enemy.entityTexture, 255, 255, 255);
                 }
+                */
                 
                 SDL_RenderCopy(renderer, _enemy.entityTexture, NULL, &_enemy.entityRect);
             }

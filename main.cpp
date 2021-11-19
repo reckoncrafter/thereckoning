@@ -25,10 +25,6 @@ int main(){
     cout << (Game.current_map->item_list.at(0).item_texture) << endl;
     */
 
-    Item handItem;
-    Game.avatar.Hand = &handItem;
-    handItem.id = ITEM_PS;
-
     int _t = time(NULL);
 
     SDL_Event Event;
@@ -36,15 +32,24 @@ int main(){
         usleep(GAME_SPEED_LIMITER);
         
         while(SDL_PollEvent(&Event)) {
-            if(!Game.avatar.isDead)
-                Game.OnEvent(&Event);
+            Game.OnEvent(&Event);
         }
 
         // THIS BLOCK EXECUTES EVERY SECOND
         if(_t != time(NULL)){
 
             for(auto &_enemy : Game.enemies){
-                _enemy.Walk();
+               // _enemy.Walk();
+                if(_enemy.home_map == Game.current_map){
+                    if(_enemy.EntityinRange(Game.avatar, 3)){
+                            _enemy.GoToEntity(Game.avatar, Game.enemies);
+                            cout << "Targeting Player" << endl;
+                    }
+                    else{
+                            _enemy.Walk();
+                            cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
+                    }
+                }
             }
             _t = time(NULL);
 
@@ -61,8 +66,11 @@ int main(){
             for(auto &_enemy : Game.enemies){
                 if(_enemy.walk_counter == 0){
                     _enemy.doRandomWalk ^= true;
-                    // XOR babeeeey
-                }         
+                    SDL_SetTextureColorMod(_enemy.entityTexture, 100, 100, 255);
+                }
+                else{
+                    SDL_SetTextureColorMod(_enemy.entityTexture, 255, 255, 255);
+                }
             }
             
         }
