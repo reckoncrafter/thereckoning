@@ -9,6 +9,7 @@
 #include <random>
 #include <time.h>
 #include <unistd.h>
+#include <json/json.h>
 
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
@@ -589,7 +590,7 @@ public:
             Running = false;
         }
         auto cl = [&](std::string steps){
-            if(Colliders("u", avatar.pos, current_map->item_list) == ITEM_WALL){
+            if(Colliders(steps, avatar.pos, current_map->item_list) == ITEM_WALL){
                 return false;
             }
             if(avatar.isDead){

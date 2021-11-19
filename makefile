@@ -1,5 +1,5 @@
 thereckoning:
-	g++ -o thereckoning main.cpp `sdl2-config --cflags --libs` -lSDL2_ttf
+	g++ -o thereckoning main.cpp `sdl2-config --cflags --libs` -lSDL2_ttf -ljsoncpp
 clean:
 	rm thereckoning
 quick:

@@ -79,45 +79,50 @@ public:
 
     bool FileSave(){
         std::ofstream fout;
-        fout.open("mapfile.trk");
+        Json::StreamWriterBuilder builder;
+        builder["indentation"] = " ";
+        Json::StreamWriter* writer(builder.newStreamWriter());
+
+        fout.open("mapfile.json");
         if(fout.fail()){return false;}
 
+        Json::Value root;
+
         for(int j = 0; j < MAP_NUM; j++){
+            Json::Value map;
             for(auto i : maps[j].item_list){
-                fout << j << ' ' << i.id << ' ' << i.pos.x << ' ' << i.pos.y;
-                fout << std::endl;
+                Json::Value item;
+                item["id"] = i.id;
+                item["pos.x"] = i.pos.x;
+                item["pos.y"] = i.pos.y;
+                map["map_id"] = j;
+                map["items"].append(item);
             }
+            root["maps"].append(map);
         }
+
+        writer->write(root, &fout);
         return true;
     }
     bool FileLoad(){
         std::ifstream fin;
-        fin.open("mapfile.trk");
-        if(fin.fail()){return false;}
-
-        std::string in;
-        Item fileItem;
-        do{
-            int mapn;
-
-            fin >> in;
-            mapn = stoi(in);
-
-            fin >> in;
-            fileItem.id = stoi(in);
-
-            fin >> in;
-            fileItem.pos.x = stoi(in);
-
-            fin >> in;
-            fileItem.pos.y = stoi(in);
-
-            if(mapn < MAP_NUM){
-                maps[mapn].item_list.push_back(fileItem);
-                //std::cout << "pushed [" << mapn << "::" << fileItem.id << "(" << fileItem.pos.x << "," << fileItem.pos.y << ")" << std::endl;
+        fin.open("mapfile.json");
+        Json::CharReaderBuilder builder;
+        Json::Value root;
+        Json::String errs;
+        bool r = Json::parseFromStream(builder, fin, &root, &errs);
+        if(!r){
+            std::cerr << "Error: " << errs;
+            return false;
+        }
+        for(auto i : root["maps"]){
+            for(auto j : i["items"]){
+                Item fileItem;
+                fileItem.id = j["id"].asInt();
+                fileItem.pos = {j["pos.x"].asInt(), j["pos.y"].asInt()};
+                maps[i["map_id"].asInt()].item_list.push_back(fileItem);
             }
-        }while(!fin.eof());
-
+        }
         return true;
     }
 
