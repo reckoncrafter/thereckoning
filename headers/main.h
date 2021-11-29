@@ -14,6 +14,7 @@
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
 #define GRID_CELL_SIZE 72
+#define NUM_PAUSE_OPTIONS 5
 
 #include "item_ids.h"
 #include "item.h"
@@ -23,6 +24,8 @@
 const int grid_cell_size = GRID_CELL_SIZE;
 const int grid_width = GRID_HEIGHT;
 const int grid_height = GRID_WIDTH;
+
+bool gamePause = false;
 
 int Colliders(const std::string steps, point ref_pos, std::vector<Item> &item_list){
     int _x = 0;
@@ -65,7 +68,7 @@ struct Entity{
     
     // Checks if entity "e" is within range "r" of the Entity executing this funciton
     bool EntityinRange(Entity &e, int r){
-        if(abs(e.pos.x - pos.x) < r || abs(e.pos.y - pos.y) < r){
+        if(abs(e.pos.x - pos.x) < r && abs(e.pos.y - pos.y) < r){
             return true;
         }
         return false;
@@ -117,6 +120,7 @@ public:
 
     int walk_counter = 0;
     bool doRandomWalk = false;
+    bool targetPlayerdebug = false;
 
     Enemy(){
         pattern = {_U, _U, _R, _R, _D, _D, _L, _L};
@@ -194,14 +198,13 @@ public:
 };
 
 class Root{
-public:
+private:
     SDL_Window *window;
     SDL_Renderer *renderer;
 
     SDL_bool mouse_active = SDL_FALSE;
     SDL_bool mouse_hover = SDL_FALSE;
 
-    bool Running;
     SDL_Surface* Surf_Display;
     
     int grid_size = grid_width * grid_height;
@@ -216,8 +219,6 @@ public:
         .w = (grid_cell_size * grid_width),
         .h = (grid_cell_size * grid_height),
     };
-
-    SDL_Rect Inventory_Menu;
 
     SDL_Rect Dialogue_Box = {
         .w = grid_cell_size * 21,
@@ -236,17 +237,11 @@ public:
     SDL_Color grid_cursor_ghost_color = {44, 44, 44, 255};
     SDL_Color grid_cursor_color = grid_background;
 
-    Player avatar;
-
-    std::vector<Enemy> enemies;
-
-    World init_world;
-    Map* current_map = &init_world.maps[init_world.bb];
-
     int map_editor_current_selection = ITEM_AIR;
 
     // Textures
     SDL_Texture* world_texture;
+    SDL_Texture* newOptTxt;
     //SDL_Texture* wall_boundary_texture;
 
     SDL_Texture* chest_texture;
@@ -263,11 +258,42 @@ public:
 
     bool render_message = false;
 
+    // Pause Menu
+    SDL_Rect Pause_Menu{
+        .x = 5 * grid_cell_size,
+        .y = 5 * grid_cell_size,
+        .w = 15 * grid_cell_size,
+        .h = 5 * grid_cell_size,
+    };
+    std::array<SDL_Rect, NUM_PAUSE_OPTIONS> OptionRects;
+    std::array<SDL_Texture*, NUM_PAUSE_OPTIONS> OptionText;
+
+public:
+    bool Running;
+    World init_world;
+    std::vector<Enemy> enemies;
+    Player avatar;
+
+    Map* current_map = &init_world.maps[init_world.bb];
+
 public:
 
     Root() {
         Surf_Display = NULL;
         Running = true;
+    }
+
+    void ApplyText(SDL_Texture* &txt, TTF_Font* &font, SDL_Rect &Rect, const char * str){
+        SDL_Surface* tmp_surf = TTF_RenderText_Blended_Wrapped(font, str, white, Rect.w);
+        if(tmp_surf == NULL){
+            std::cout << "unable to render message" << std::endl;
+        }
+        txt = SDL_CreateTextureFromSurface(renderer, tmp_surf);
+        if(txt == NULL){
+            std::cout << "unable to create texture" << std::endl;
+        }
+        SDL_QueryTexture(txt, NULL, NULL, &Rect.w, &Rect.h);
+        SDL_FreeSurface(tmp_surf);
     }
 
     SDL_Texture* RenderWallEdges(std::vector<Item> &item_list){
@@ -438,6 +464,22 @@ public:
         }
     }
 
+    void initPauseMenu(){
+        for(int i = 0; i < NUM_PAUSE_OPTIONS; i++){
+            OptionRects[i].y = Pause_Menu.y + (60*i+1) + 20;
+            OptionRects[i].x = Pause_Menu.x + 10;
+            OptionRects[i].w = Pause_Menu.w - 20;
+            OptionRects[i].h = 50;
+        }
+
+        ApplyText(OptionText[0], Mono, OptionRects[0], "Load Map");
+        ApplyText(OptionText[1], Mono, OptionRects[1], "Save Current Map");
+        ApplyText(OptionText[2], Mono, OptionRects[2], "Eat Ass");
+        ApplyText(OptionText[3], Mono, OptionRects[3], "Empty Map");
+        ApplyText(OptionText[4], Mono, OptionRects[4], "Quit Game");
+        
+    }
+
     bool OnInit(){
         if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
             return false;
@@ -455,11 +497,6 @@ public:
             return false;
         }
         SDL_SetWindowTitle(window, "The Reckoning");
-        
-        Inventory_Menu.h = (grid_cell_size * 5) + 40;
-        Inventory_Menu.w = (grid_cell_size * 12) + 40;
-        Inventory_Menu.x = (grid_cell_size * 4) - 20;
-        Inventory_Menu.y = (grid_cell_size * 9) - 20;
 
         Dialogue_Box.x = grid_cell_size * 2;
         Dialogue_Box.y = grid_cell_size * 2;
@@ -475,6 +512,7 @@ public:
             return EXIT_FAILURE;
         }
 
+        initPauseMenu();
         return true;
     }
 
@@ -586,6 +624,7 @@ public:
     }
 
     void OnEvent(SDL_Event* Event){
+        SDL_Keymod mod = SDL_GetModState();
         if(Event->type == SDL_QUIT) {
             Running = false;
         }
@@ -602,6 +641,9 @@ public:
             switch (Event->type) {
             case SDL_KEYDOWN:
                 switch (Event->key.keysym.sym) {
+                case SDLK_ESCAPE:
+                    gamePause ^= true;
+                    break;
                 case SDLK_w:
                 case SDLK_UP:
                     if(avatar.entityRect.y-grid_cell_size != (0 - grid_cell_size)){
@@ -689,8 +731,19 @@ public:
                     else{
                         InitItems();
                     }
+                    break;
+                case SDLK_r:
+                    if(mod & KMOD_CTRL){
+                        std::cout << "Reset.." << std::endl;
+                        for(auto &e : enemies){
+                            e.pos.x = rand()%GRID_WIDTH;
+                            e.pos.y = rand()&GRID_HEIGHT;
+                            e.sync();
+                        }
+                    }
+                    break;
                 }
-                if(OnItem() && OnSpeaker()){
+                if(OnSpeaker()){
                     render_message = true;
                     const char* s = Speak(OnItem());
                     SDL_Surface* tmp_surf = TTF_RenderText_Blended_Wrapped(Mono, s, white, Dialogue_Box.w);
@@ -703,7 +756,6 @@ public:
                 else{
                     render_message = false;
                 }
-                
                 break;
 
             case SDL_WINDOWEVENT:
@@ -720,6 +772,15 @@ public:
                     mouse_active = SDL_TRUE;
                 break;
             case SDL_MOUSEBUTTONDOWN:
+                if(gamePause){
+                    SDL_Point click = {Event->motion.x, Event->motion.y};
+                    if(SDL_PointInRect(&click, &OptionRects[0])){
+                        std::cout << "Load Map" << std::endl;
+                        // THIS WORKS
+                    }
+                    break;
+                }
+
                 point placedown = {(Event->motion.x / grid_cell_size), 
                                    (Event->motion.y / grid_cell_size)};
                 if(map_editor_current_selection == ITEM_AIR){
@@ -756,32 +817,13 @@ public:
     }
 
     void OnRender(){
-        // Draw grid background.
-        /*
-        SDL_SetRenderDrawColor(renderer, grid_background.r, grid_background.g,
-            grid_background.b, grid_background.a);
-        SDL_RenderClear(renderer);
-        */
         SDL_RenderCopy(renderer, world_texture, NULL, &world_backround);
-        // Draw grid lines.
-        /*
-        SDL_SetRenderDrawColor(renderer, grid_line_color.r, grid_line_color.g,
-                               grid_line_color.b, grid_line_color.a);
 
-        for (int x = 0; x < 1 + grid_width * grid_cell_size; x += grid_cell_size){
-            SDL_RenderDrawLine(renderer, x, 0, x, window_height);
-        }
-
-        for (int y = 0; y < 1 + grid_height * grid_cell_size; y += grid_cell_size){
-            SDL_RenderDrawLine(renderer, 0, y, window_width, y);
-        }
-        */
         
         for(auto &i : current_map->item_list){
             if(i.item_texture)
             SDL_RenderCopy(renderer, i.item_texture, NULL, &i.rect);
         }
-        //SDL_RenderCopy(renderer, wall_boundary_texture, NULL, NULL);
 
         if (mouse_active && mouse_hover) {
             SDL_SetRenderDrawColor(renderer, grid_cursor_ghost_color.r,
@@ -795,26 +837,19 @@ public:
         SDL_SetRenderDrawColor(renderer, grid_cursor_color.r,
                                grid_cursor_color.g, grid_cursor_color.b,
                                grid_cursor_color.a);
-        //SDL_RenderFillRect(renderer, &grid_cursor);
-
-        if(OnItem() == ITEM_CHEST){
-            SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
-            SDL_RenderFillRect(renderer, &Inventory_Menu);
-        }
             
         for(auto &_enemy : enemies){
             if(current_map == _enemy.home_map){
-                //DropShadow(_enemy.entityTexture, _enemy.entityRect);
-
-                /*
-                if(_enemy.doRandomWalk){
+                if(_enemy.targetPlayerdebug){
+                    SDL_SetTextureColorMod(_enemy.entityTexture, 255, 50, 50);
+                }
+                else if(_enemy.doRandomWalk){
                     SDL_SetTextureColorMod(_enemy.entityTexture, 100, 100, 255);
                 }
                 else{
                     SDL_SetTextureColorMod(_enemy.entityTexture, 255, 255, 255);
                 }
-                */
-                
+
                 SDL_RenderCopy(renderer, _enemy.entityTexture, NULL, &_enemy.entityRect);
             }
         }
@@ -829,13 +864,26 @@ public:
             SDL_RenderCopy(renderer, current_message, NULL, &tmp);
         }
 
-        DropShadow(avatar.entityTexture, avatar.entityRect);
+        //DropShadow(avatar.entityTexture, avatar.entityRect);
 
         if(avatar.isDead)
             SDL_SetTextureColorMod(avatar.entityTexture, 255,50,50);
+        else{
+            SDL_SetTextureColorMod(avatar.entityTexture, 255,255,255);
+        }
 
         SDL_RenderCopy(renderer, avatar.entityTexture, NULL, &avatar.entityRect);
 
+        if(gamePause){
+            SDL_SetRenderDrawColor(renderer, 25,25,25,255);
+            SDL_RenderFillRect(renderer, &Pause_Menu);
+            for(int i = 0; i < NUM_PAUSE_OPTIONS; i++){
+                //SDL_SetRenderDrawColor(renderer, 100, 100, 150, 255);
+                //SDL_RenderFillRect(renderer, &OptionRects[i]);
+                SDL_RenderCopy(renderer, OptionText[i], NULL, &OptionRects[i]);
+            }
+        }
+        
         SDL_RenderPresent(renderer);
         SDL_RenderClear(renderer);
     }

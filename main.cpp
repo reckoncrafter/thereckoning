@@ -35,17 +35,21 @@ int main(){
             Game.OnEvent(&Event);
         }
 
+
         // THIS BLOCK EXECUTES EVERY SECOND
-        if(_t != time(NULL)){
+        if(!gamePause){
+            if(_t != time(NULL)){
 
             for(auto &_enemy : Game.enemies){
                // _enemy.Walk();
                 if(_enemy.home_map == Game.current_map){
-                    if(_enemy.EntityinRange(Game.avatar, 3)){
+                    if(_enemy.EntityinRange(Game.avatar, 5)){
+                            _enemy.targetPlayerdebug = true;
                             _enemy.GoToEntity(Game.avatar, Game.enemies);
                             cout << "Targeting Player" << endl;
                     }
                     else{
+                            _enemy.targetPlayerdebug = false;
                             _enemy.Walk();
                             cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
                     }
@@ -66,15 +70,11 @@ int main(){
             for(auto &_enemy : Game.enemies){
                 if(_enemy.walk_counter == 0){
                     _enemy.doRandomWalk ^= true;
-                    SDL_SetTextureColorMod(_enemy.entityTexture, 100, 100, 255);
-                }
-                else{
-                    SDL_SetTextureColorMod(_enemy.entityTexture, 255, 255, 255);
                 }
             }
             
         }
-
+        }
         Game.OnLoop();
         Game.OnRender();
     }
