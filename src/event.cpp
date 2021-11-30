@@ -12,6 +12,9 @@ void Root::OnEvent(SDL_Event* Event){
         if(avatar.isDead){
             return false;
         }
+        if(gamePause){
+            return false;
+        }
         return true;
     };
         //printf(" %i,%i ", grid_cursor.x, grid_cursor.y);
@@ -89,13 +92,6 @@ void Root::OnEvent(SDL_Event* Event){
                 std::cout << "set to " << Event->key.keysym.sym-SDLK_0 << std::endl;
                 map_editor_current_selection = (Event->key.keysym.sym-SDLK_0);
                 break;
-            case SDLK_p:
-                for(auto i : current_map->item_list){
-                    std::cout << "id: " << i.id << std::endl;
-                    std::cout << "pos: " << i.pos.x << ", " << i.pos.y << std::endl;
-                    std::cout << std::endl;
-                }
-                break;
             case SDLK_o:
                 if(!init_world.FileSave()){
                     std::cout << "save failed!" << std::endl;
@@ -152,7 +148,7 @@ void Root::OnEvent(SDL_Event* Event){
             if(gamePause){
                 SDL_Point click = {Event->motion.x, Event->motion.y};
                 if(SDL_PointInRect(&click, &OptionRects[0])){
-                    std::cout << "Load Map" << std::endl;
+                    std::cout << "Load Map..." << std::endl;
                     // THIS WORKS
                 }
                 break;

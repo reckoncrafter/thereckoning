@@ -58,8 +58,30 @@ void Root::OnRender(){
     SDL_RenderCopy(renderer, avatar.entityTexture, NULL, &avatar.entityRect);
 
     if(gamePause){
+        /*
+        SDL_Rect Border{
+            .x = Pause_Menu.x - 20,
+            .y = Pause_Menu.y + 10,
+            .w = Pause_Menu.w + 20,
+            .h = Pause_Menu.h + 20
+        };
+        SDL_SetRenderDrawColor(renderer, 255,255,255,255);
+        SDL_RenderFillRect(renderer, &Border);
+        */
+       
         SDL_SetRenderDrawColor(renderer, 25,25,25,255);
         SDL_RenderFillRect(renderer, &Pause_Menu);
+        if (mouse_active && mouse_hover){
+            SDL_Point mp;
+            SDL_GetMouseState(&mp.x, &mp.y);
+            for(auto &i : OptionRects){
+                if(SDL_PointInRect(&mp, &i)){
+                    SDL_SetRenderDrawColor(renderer, 55,55,55,255);
+                    SDL_RenderFillRect(renderer, &i);
+                    break;
+                }
+            }
+        }
         for(int i = 0; i < NUM_PAUSE_OPTIONS; i++){
             //SDL_SetRenderDrawColor(renderer, 100, 100, 150, 255);
             //SDL_RenderFillRect(renderer, &OptionRects[i]);
