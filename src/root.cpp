@@ -61,7 +61,7 @@ void Root::SetItemPosition(Item &i, point pos){
 
 void Root::EnemySpawn(){
     for(int i = 0; i < init_world.MAP_NUM; i++){
-        for(int j = 0; j < 4; j++){
+        for(int j = 0; j < ENEMIES_PER_MAP; j++){
             Enemy tmp;
             tmp.pos.x = rand()%GRID_WIDTH;
             tmp.pos.y = rand()&GRID_HEIGHT;
@@ -72,7 +72,9 @@ void Root::EnemySpawn(){
     for(auto &_enemy : enemies){
         _enemy.sync();
         _enemy.walk_counter = rand()%8;
+        _enemy.entityTexture = bunny_texture;
     }
+
 }
 
 void Root::InitItems(){
@@ -102,11 +104,12 @@ void Root::initPauseMenu(){
         OptionRects[i].h = 50;
     }
 
-    ApplyText(OptionText[0], Mono, OptionRects[0], "Load Map");
-    ApplyText(OptionText[1], Mono, OptionRects[1], "Save Current Map");
-    ApplyText(OptionText[2], Mono, OptionRects[2], "Eat Ass");
-    ApplyText(OptionText[3], Mono, OptionRects[3], "Empty Map");
-    ApplyText(OptionText[4], Mono, OptionRects[4], "Quit Game");
+    ApplyText(OptionText[LOAD], Mono, OptionRects[LOAD], "Load Map");
+    ApplyText(OptionText[SAVE], Mono, OptionRects[SAVE], "Save Current Map");
+    ApplyText(OptionText[CLEAR], Mono, OptionRects[CLEAR], "Clear Map");
+    ApplyText(OptionText[PACIFY], Mono, OptionRects[PACIFY], "Destroy Enemies");
+    ApplyText(OptionText[SUMMON], Mono, OptionRects[SUMMON], "Summon / Reset Enemies");
+    ApplyText(OptionText[QUIT], Mono, OptionRects[QUIT], "Quit Game");
 }
 
 int Root::OnItem(){

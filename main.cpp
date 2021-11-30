@@ -16,6 +16,7 @@ int main(){
     
     Game.init_world.PlaceTestItems();
     Game.InitItems();
+    Game.EnemySpawn();
     
     /* CHECKING IF ITEMS PLACED CORRECTLY
     cout << Game.current_map->item_list.at(0).id << endl;
@@ -45,12 +46,12 @@ int main(){
                     if(_enemy.EntityinRange(Game.avatar, 5)){
                             _enemy.targetPlayerDebug = true;
                             _enemy.GoToEntity(Game.avatar, Game.enemies);
-                            cout << "Targeting Player" << endl;
+                            //cout << "Targeting Player" << endl;
                     }
                     else{
                             _enemy.targetPlayerDebug = false;
                             _enemy.Walk();
-                            cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
+                            //cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
                     }
                 }
             }

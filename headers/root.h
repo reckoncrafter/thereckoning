@@ -1,6 +1,8 @@
 #ifndef ROOT_H
 #define ROOT_H
 
+#define NUM_PAUSE_OPTIONS 6
+
 enum ITEM_IDS{
     ITEM_AIR = 0,
     ITEM_WALL = 1,
@@ -10,6 +12,15 @@ enum ITEM_IDS{
     ITEM_CHEF = 5,
     ITEM_BUNNY = 6,
     ITEM_PS = 7
+};
+
+enum PAUSE_OPTIONS{
+    LOAD,
+    SAVE,
+    CLEAR,
+    PACIFY,
+    SUMMON,
+    QUIT,
 };
 
 class Root{
@@ -78,7 +89,7 @@ private:
         .x = 5 * grid_cell_size,
         .y = 5 * grid_cell_size,
         .w = 15 * grid_cell_size,
-        .h = 5 * grid_cell_size,
+        .h = 6 * grid_cell_size,
     };
     std::array<SDL_Rect, NUM_PAUSE_OPTIONS> OptionRects;
     std::array<SDL_Texture*, NUM_PAUSE_OPTIONS> OptionText;

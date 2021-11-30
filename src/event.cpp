@@ -92,19 +92,7 @@ void Root::OnEvent(SDL_Event* Event){
                 std::cout << "set to " << Event->key.keysym.sym-SDLK_0 << std::endl;
                 map_editor_current_selection = (Event->key.keysym.sym-SDLK_0);
                 break;
-            case SDLK_o:
-                if(!init_world.FileSave()){
-                    std::cout << "save failed!" << std::endl;
-                }
-                break;
-            case SDLK_l:
-                if(!init_world.FileLoad()){
-                    std::cout << "load failed!" << std::endl;
-                }
-                else{
-                    InitItems();
-                }
-                break;
+
             case SDLK_r:
                 if(mod & KMOD_CTRL){
                     std::cout << "Reset.." << std::endl;
@@ -147,10 +135,41 @@ void Root::OnEvent(SDL_Event* Event){
         case SDL_MOUSEBUTTONDOWN:
             if(gamePause){
                 SDL_Point click = {Event->motion.x, Event->motion.y};
-                if(SDL_PointInRect(&click, &OptionRects[0])){
+                if(SDL_PointInRect(&click, &OptionRects[LOAD])){
                     std::cout << "Load Map..." << std::endl;
-                    // THIS WORKS
+                    if(!init_world.FileLoad()){
+                        std::cout << "load failed!" << std::endl;
+                    }
+                    else{
+                        InitItems();
+                    }
                 }
+                if(SDL_PointInRect(&click, &OptionRects[SAVE])){
+                    std::cout << "Save Map..." << std::endl;
+                    if(!init_world.FileSave()){
+                        std::cout << "save failed!" << std::endl;
+                    }
+                }
+                if(SDL_PointInRect(&click, &OptionRects[CLEAR])){
+                    std::cout << "Destroying all items..." << std::endl;
+                    for(int i = 0; i < init_world.MAP_NUM; i++){
+                        init_world.maps[i].item_list.clear();
+                    }
+                }
+                if(SDL_PointInRect(&click, &OptionRects[PACIFY])){
+                    std::cout << "Vaporizing all enemies..." << std::endl;
+                    enemies.clear();
+                }
+                if(SDL_PointInRect(&click, &OptionRects[SUMMON])){
+                    std::cout << "Calling upon the Underworld..." << std::endl;
+                    enemies.clear();
+                    EnemySpawn();
+                }
+                if(SDL_PointInRect(&click, &OptionRects[QUIT])){
+                    std::cout << "Quitting..." << std::endl;
+                    Running = false;
+                }
+
                 break;
             }
 

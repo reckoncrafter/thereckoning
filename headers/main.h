@@ -17,7 +17,8 @@
 #define GRID_HEIGHT 25
 #define GRID_WIDTH 25
 #define GRID_CELL_SIZE 72
-#define NUM_PAUSE_OPTIONS 5
+
+#define ENEMIES_PER_MAP 6
 
 extern const int grid_cell_size;
 extern const int grid_width;

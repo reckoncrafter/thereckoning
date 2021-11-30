@@ -23,7 +23,6 @@ bool Root::OnInit(){
 
     // Players and NPCs
     avatar.sync();
-    EnemySpawn();
 
     // Fonts
     Mono = TTF_OpenFont("assets/DOS.ttf", 36);
@@ -81,11 +80,6 @@ bool Root::InitTextures(){
     CHK_TXT();
 
     bunny_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
-            
-    // this should be changed
-    for(auto &_enemy : enemies){
-        _enemy.entityTexture = bunny_texture;
-    }
 
     // ITEM_PS
     bmp_surf = SDL_LoadBMP("assets/textures/placeholder.bmp"); // change
