@@ -1,5 +1,4 @@
 #include "headers/main.h"
-
 #define GAME_SPEED_LIMITER 16666 // 60 FPS
 
 using namespace std;
@@ -44,12 +43,12 @@ int main(){
                // _enemy.Walk();
                 if(_enemy.home_map == Game.current_map){
                     if(_enemy.EntityinRange(Game.avatar, 5)){
-                            _enemy.targetPlayerdebug = true;
+                            _enemy.targetPlayerDebug = true;
                             _enemy.GoToEntity(Game.avatar, Game.enemies);
                             cout << "Targeting Player" << endl;
                     }
                     else{
-                            _enemy.targetPlayerdebug = false;
+                            _enemy.targetPlayerDebug = false;
                             _enemy.Walk();
                             cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
                     }
@@ -82,4 +81,4 @@ int main(){
     Game.OnCleanup();
 
     return 0;
-}   
+}

@@ -1,9 +1,5 @@
-struct point{
-    int x,y;
-    bool operator==(point rhs){
-        return this->x == rhs.x && this->y == rhs.y;
-    }
-};
+#ifndef ITEM_H
+#define ITEM_H
 
 class Item{
 public:
@@ -12,9 +8,7 @@ public:
     SDL_Texture* item_texture;
     point pos;
 
-    Item(){
-        item_texture = NULL;
-        pos = {0,0};
-        id = 0;
-    }
+    Item();
 };
+
+#endif
