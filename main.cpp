@@ -1,15 +1,13 @@
 #include "headers/main.h"
-
 #define GAME_SPEED_LIMITER 16666 // 60 FPS
 
 using namespace std;
 
-int main(int argv, char** args){
+int main(int argc, char* argv[]){
     srand(time(NULL));
     Root Game;
 
     if(Game.OnInit() == false) {
-        cout << "Failure to Initialize" << endl;
         return -1;
     }
     
@@ -18,6 +16,7 @@ int main(int argv, char** args){
     
     Game.init_world.PlaceTestItems();
     Game.InitItems();
+    Game.EnemySpawn();
     
     /* CHECKING IF ITEMS PLACED CORRECTLY
     cout << Game.current_map->item_list.at(0).id << endl;
@@ -26,10 +25,6 @@ int main(int argv, char** args){
     cout << (Game.current_map->item_list.at(0).item_texture) << endl;
     */
 
-    Item handItem;
-    Game.avatar.Hand = &handItem;
-    handItem.id = ITEM_PS;
-
     int _t = time(NULL);
 
     SDL_Event Event;
@@ -37,15 +32,28 @@ int main(int argv, char** args){
         usleep(GAME_SPEED_LIMITER);
         
         while(SDL_PollEvent(&Event)) {
-            if(!Game.avatar.isDead)
-                Game.OnEvent(&Event);
+            Game.OnEvent(&Event);
         }
 
+
         // THIS BLOCK EXECUTES EVERY SECOND
-        if(_t != time(NULL)){
+        if(!gamePause){
+            if(_t != time(NULL)){
 
             for(auto &_enemy : Game.enemies){
-                _enemy.Walk();
+               // _enemy.Walk();
+                if(_enemy.home_map == Game.current_map){
+                    if(_enemy.EntityinRange(Game.avatar, 5)){
+                            _enemy.targetPlayerDebug = true;
+                            _enemy.GoToEntity(Game.avatar, Game.enemies);
+                            //cout << "Targeting Player" << endl;
+                    }
+                    else{
+                            _enemy.targetPlayerDebug = false;
+                            _enemy.Walk();
+                            //cout << (_enemy.doRandomWalk? "Wandering.." : "Walking..") << endl;
+                    }
+                }
             }
             _t = time(NULL);
 
@@ -53,21 +61,20 @@ int main(int argv, char** args){
                 Game.avatar.isDead = false;
                 Game.current_map = &Game.init_world.maps[Game.init_world.bb];
 
-                Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
+                //Game.wall_boundary_texture = Game.RenderWallEdges(Game.current_map->item_list);
 
-                Game.avatar.position = {2,2};
+                Game.avatar.pos = {2,2};
                 Game.avatar.sync();
             }
 
             for(auto &_enemy : Game.enemies){
                 if(_enemy.walk_counter == 0){
                     _enemy.doRandomWalk ^= true;
-                    // XOR babeeeey
-                }         
+                }
             }
             
         }
-
+        }
         Game.OnLoop();
         Game.OnRender();
     }
@@ -75,4 +82,4 @@ int main(int argv, char** args){
     Game.OnCleanup();
 
     return 0;
-}   
+}
