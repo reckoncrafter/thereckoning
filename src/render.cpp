@@ -36,6 +36,9 @@ void Root::OnRender(){
             SDL_RenderCopy(renderer, _enemy.entityTexture, NULL, &_enemy.entityRect);
         }
     }
+    if(bullet.isActive){
+        SDL_RenderCopy(renderer, bullet.entityTexture, NULL, &bullet.entityRect);
+    }
 
     if(render_message){
         SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
@@ -56,6 +59,21 @@ void Root::OnRender(){
     }
 
     SDL_RenderCopy(renderer, avatar.entityTexture, NULL, &avatar.entityRect);
+    switch(avatar.arrowDir){
+        case 'u':
+            SDL_RenderCopy(renderer, avatar.arrowTexture, NULL, &avatar.arrowRect);
+            break;
+        case 'r':
+            SDL_RenderCopyEx(renderer, avatar.arrowTexture, NULL, &avatar.arrowRect, 90.0, NULL, SDL_FLIP_NONE);
+            break;
+        case 'd':
+            SDL_RenderCopyEx(renderer, avatar.arrowTexture, NULL, &avatar.arrowRect, 180.0, NULL, SDL_FLIP_NONE);
+            break;
+        case 'l':
+            SDL_RenderCopyEx(renderer, avatar.arrowTexture, NULL, &avatar.arrowRect, 270.0, NULL, SDL_FLIP_NONE);
+            break;
+    }
+    
 
     if(gamePause){
         /*

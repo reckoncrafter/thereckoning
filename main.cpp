@@ -1,7 +1,8 @@
 #include "headers/main.h"
-#define GAME_SPEED_LIMITER 16666 // 60 FPS
 
 using namespace std;
+
+bool onSecond = false;
 
 int main(){
     srand(time(NULL));
@@ -39,6 +40,7 @@ int main(){
         // THIS BLOCK EXECUTES EVERY SECOND
         if(!gamePause){
             if(_t != time(NULL)){
+                onSecond = true;
 
             for(auto &_enemy : Game.enemies){
                // _enemy.Walk();
@@ -73,6 +75,9 @@ int main(){
                 }
             }
             
+        }
+        else{
+            onSecond = false;
         }
         }
         Game.OnLoop();

@@ -23,6 +23,7 @@ bool Root::OnInit(){
 
     // Players and NPCs
     avatar.sync();
+    bullet.sync();
 
     // Fonts
     Mono = TTF_OpenFont("assets/DOS.ttf", 36);
@@ -86,6 +87,21 @@ bool Root::InitTextures(){
     CHK_TXT();
 
     ps_texture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+    bmp_surf = SDL_LoadBMP("assets/textures/bullet.bmp");
+    CHK_TXT();
+
+    bullet.entityTexture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+    bmp_surf = SDL_LoadBMP("assets/textures/arrow.bmp");
+    CHK_TXT();
+
+    avatar.arrowTexture = SDL_CreateTextureFromSurface(renderer, bmp_surf);
+
+    bmp_surf = SDL_LoadBMP("assets/textures/explosion.bmp");
+    CHK_TXT();
+
+    explosion = SDL_CreateTextureFromSurface(renderer, bmp_surf);
 
     return true;
 }

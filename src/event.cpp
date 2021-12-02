@@ -45,7 +45,7 @@ void Root::OnEvent(SDL_Event* Event){
                 if(avatar.entityRect.y+grid_cell_size != (grid_height * grid_cell_size)){
                     if(cl("d")){
                         avatar.pos.y += 1;
-                        avatar.entityRect.y += grid_cell_size;
+                        avatar.sync();
                     }
                 }
                 else if(current_map->GetNextMap('d') != nullptr){
@@ -61,7 +61,7 @@ void Root::OnEvent(SDL_Event* Event){
                 if(avatar.entityRect.x-grid_cell_size != 0 - grid_cell_size){
                     if(cl("l")){
                         avatar.pos.x -= 1;
-                        avatar.entityRect.x -= grid_cell_size;
+                        avatar.sync();
                     }
                 }
                 else if(current_map->GetNextMap('l') != nullptr){
@@ -77,7 +77,7 @@ void Root::OnEvent(SDL_Event* Event){
                 if(avatar.entityRect.x+grid_cell_size != (grid_width * grid_cell_size)){
                     if(cl("r")){
                         avatar.pos.x += 1;
-                        avatar.entityRect.x += grid_cell_size;
+                        avatar.sync();
                     }
                 }
                 else if(current_map->GetNextMap('r') != nullptr){
@@ -87,6 +87,32 @@ void Root::OnEvent(SDL_Event* Event){
                     InitItems();
                     SDL_SetWindowTitle(window, current_map->name.c_str());
                 }
+                break;
+            case SDLK_f:
+                bullet.pos = avatar.pos;
+                bullet.sync();
+                bullet.isActive = true;
+                break;
+            case SDLK_e:
+                #define dir avatar.arrowDir
+                switch(dir){
+                    case 'u':
+                        dir = 'r';
+                        break;
+                    case 'r':
+                        dir = 'd';
+                        break;
+                    case 'd':
+                        dir = 'l';
+                        break;
+                    case 'l':
+                        dir = 'u';
+                        break;
+                    default:
+                        dir = 'u';
+                        break;
+                }
+                avatar.sync();
                 break;
             case SDLK_0 ... SDLK_9:
                 std::cout << "set to " << Event->key.keysym.sym-SDLK_0 << std::endl;

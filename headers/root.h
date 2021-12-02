@@ -30,6 +30,7 @@ private:
 
     SDL_bool mouse_active = SDL_FALSE;
     SDL_bool mouse_hover = SDL_FALSE;
+    SDL_Point mouse_location;
 
     SDL_Surface* Surf_Display;
     
@@ -77,6 +78,7 @@ private:
     SDL_Texture* chef_texture;
     SDL_Texture* bunny_texture;
     SDL_Texture* ps_texture;
+    SDL_Texture* explosion;
 
     // Message Textures
     std::vector<SDL_Texture*> msg_textures;
@@ -99,6 +101,7 @@ public:
     World init_world;
     std::vector<Enemy> enemies;
     Player avatar;
+    Bullet bullet;
 
     Map* current_map = &init_world.maps[init_world.bb];
 public:

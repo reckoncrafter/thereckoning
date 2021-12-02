@@ -9,6 +9,9 @@ public:
     SDL_Rect entityRect;
     point pos;
     Map* home_map;
+    bool isDead = false;
+
+    Entity();
 
     void sync();
     bool EntityinRange(Entity &e, int r);
@@ -17,8 +20,15 @@ public:
 
 class Player : public Entity{
 public:
-    bool isDead = false;
-    Player();    
+    SDL_Texture* arrowTexture;
+    SDL_Rect arrowRect;
+    char arrowDir = 'u';
+    point arrowPos;
+
+    void sync();
+
+    void alignArrow(char dir);
+    Player();
 };
 
 class Enemy : public Entity{
@@ -34,6 +44,18 @@ public:
     Enemy();
     void GoToEntity(Entity &e, std::vector<Enemy> &neighbors);
     void Walk();
+};
+
+class Bullet : public Entity{
+public:
+    bool isActive = false;
+    int velocity = 1;
+    char fireDirection;
+
+    Bullet();
+
+    bool step(char dir, std::vector<Enemy> &targets, Map* current);
+    //void shoot(point origin, char dir, std::vector<Enemy> &targets);
 };
 
 #endif
