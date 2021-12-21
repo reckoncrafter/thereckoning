@@ -23,36 +23,6 @@ void Root::ApplyText(SDL_Texture* &txt, TTF_Font* &font, SDL_Rect &Rect, const c
     SDL_FreeSurface(tmp_surf);
 }
 
-void Root::AssignTextures(Item &i){
-    switch(i.id){
-            case ITEM_AIR:
-                break;
-            case ITEM_WALL:
-                i.item_texture = wall_texture;
-                break;
-            case ITEM_AIRWALL:
-                i.item_texture = airwall_texture;
-                break;
-            case ITEM_CHEST:
-                i.item_texture = chest_texture;
-                break;
-            case ITEM_TOTEM:
-                i.item_texture = totem_texture;
-                break;
-            case ITEM_CHEF:
-                i.item_texture = chef_texture;
-                break;
-            case ITEM_BUNNY:
-                i.item_texture = bunny_texture;
-                break;
-            case ITEM_PS:
-                i.item_texture = ps_texture;
-                break;
-            default:
-                break;
-    }
-}
-
 void Root::SetItemPosition(Item &i, point pos){
     i.pos = pos;
     i.rect.x = pos.x * grid_cell_size;
@@ -77,14 +47,37 @@ void Root::EnemySpawn(){
 
 }
 
-void Root::InitItems(){
-    for(auto &i : current_map->item_list){
-        i.rect.w = grid_cell_size;
-        i.rect.h = grid_cell_size;
-        SetItemPosition(i, i.pos);
-    }
-    for(auto &i : current_map->item_list){
-        AssignTextures(i);
+void Root::InitItem(Item &i){
+    i.rect.w = grid_cell_size;
+    i.rect.h = grid_cell_size;
+    SetItemPosition(i, i.pos);
+    // Assign Textures based on Item ID
+    switch(i.id){
+        case ITEM_AIR:
+            break;
+        case ITEM_WALL:
+            i.item_texture = wall_texture;
+            break;
+        case ITEM_AIRWALL:
+            i.item_texture = airwall_texture;
+            break;
+        case ITEM_CHEST:
+            i.item_texture = chest_texture;
+            break;
+        case ITEM_TOTEM:
+            i.item_texture = totem_texture;
+            break;
+        case ITEM_CHEF:
+            i.item_texture = chef_texture;
+            break;
+        case ITEM_BUNNY:
+            i.item_texture = bunny_texture;
+            break;
+        case ITEM_PS:
+            i.item_texture = ps_texture;
+            break;
+        default:
+            break;
     }
 }
 
@@ -93,23 +86,9 @@ void Root::PlaceItem(int id, point pos){
     newItem.id = id;
     newItem.pos = pos;
     current_map->item_list.push_back(newItem);
-    InitItems();
-}
-
-void Root::initPauseMenu(){
-    for(int i = 0; i < NUM_PAUSE_OPTIONS; i++){
-        OptionRects[i].y = Pause_Menu.y + (60*i+1) + 20;
-        OptionRects[i].x = Pause_Menu.x + 10;
-        OptionRects[i].w = Pause_Menu.w - 20;
-        OptionRects[i].h = 50;
+    for(auto &i : current_map->item_list){
+        InitItem(i);
     }
-
-    ApplyText(OptionText[LOAD], Mono, OptionRects[LOAD], "Load Map");
-    ApplyText(OptionText[SAVE], Mono, OptionRects[SAVE], "Save Current Map");
-    ApplyText(OptionText[CLEAR], Mono, OptionRects[CLEAR], "Clear Map");
-    ApplyText(OptionText[PACIFY], Mono, OptionRects[PACIFY], "Destroy Enemies");
-    ApplyText(OptionText[SUMMON], Mono, OptionRects[SUMMON], "Summon / Reset Enemies");
-    ApplyText(OptionText[QUIT], Mono, OptionRects[QUIT], "Quit Game");
 }
 
 int Root::OnItem(){

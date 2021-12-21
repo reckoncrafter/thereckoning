@@ -109,7 +109,7 @@ public:
     void ApplyText(SDL_Texture* &txt, TTF_Font* &font, SDL_Rect &Rect, const char * str);
     void AssignTextures(Item &i);
     void SetItemPosition(Item &i, point pos);
-    void InitItems();
+    void InitItem(Item &i);
     void PlaceItem(int id, point pos);
     void EnemySpawn();
     void initPauseMenu();

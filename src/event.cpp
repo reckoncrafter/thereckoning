@@ -36,7 +36,9 @@ void Root::OnEvent(SDL_Event* Event){
                     current_map = current_map->GetNextMap('u');
                     avatar.pos.y = grid_height - 1;
                     avatar.sync();
-                    InitItems();
+                    for(auto &i : current_map->item_list){
+                        InitItem(i);
+                    }
                     SDL_SetWindowTitle(window, current_map->name.c_str());
                 }
                 break;
@@ -52,7 +54,9 @@ void Root::OnEvent(SDL_Event* Event){
                     current_map = current_map->GetNextMap('d');
                     avatar.pos.y = 0;
                     avatar.sync();
-                    InitItems();
+                    for(auto &i : current_map->item_list){
+                        InitItem(i);
+                    }
                     SDL_SetWindowTitle(window, current_map->name.c_str());
                 }
                 break;
@@ -68,7 +72,9 @@ void Root::OnEvent(SDL_Event* Event){
                     current_map = current_map->GetNextMap('l');
                     avatar.pos.x = grid_width - 1;
                     avatar.sync();
-                    InitItems();
+                    for(auto &i : current_map->item_list){
+                        InitItem(i);
+                    }
                     SDL_SetWindowTitle(window, current_map->name.c_str());
                 }
                 break;
@@ -84,7 +90,9 @@ void Root::OnEvent(SDL_Event* Event){
                     current_map = current_map->GetNextMap('r');
                     avatar.pos.x = 0;
                     avatar.sync();
-                    InitItems();
+                    for(auto &i : current_map->item_list){
+                        InitItem(i);
+                    }
                     SDL_SetWindowTitle(window, current_map->name.c_str());
                 }
                 break;
@@ -167,7 +175,9 @@ void Root::OnEvent(SDL_Event* Event){
                         std::cout << "load failed!" << std::endl;
                     }
                     else{
-                        InitItems();
+                        for(auto &i : current_map->item_list){
+                            InitItem(i);
+                        }
                     }
                 }
                 if(SDL_PointInRect(&click, &OptionRects[SAVE])){

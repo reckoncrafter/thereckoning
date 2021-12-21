@@ -16,7 +16,10 @@ int main(){
         exit(EXIT_FAILURE); 
     
     Game.init_world.PlaceTestItems();
-    Game.InitItems();
+    for(auto &i : Game.current_map->item_list){
+        Game.InitItem(i);
+    }
+
     Game.EnemySpawn();
     
     /* CHECKING IF ITEMS PLACED CORRECTLY

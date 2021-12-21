@@ -31,7 +31,21 @@ bool Root::OnInit(){
         return EXIT_FAILURE;
     }
 
-    initPauseMenu();
+
+    // Initializing Pause Menu
+    for(int i = 0; i < NUM_PAUSE_OPTIONS; i++){
+        OptionRects[i].y = Pause_Menu.y + (60*i+1) + 20;
+        OptionRects[i].x = Pause_Menu.x + 10;
+        OptionRects[i].w = Pause_Menu.w - 20;
+        OptionRects[i].h = 50;
+    }
+
+    ApplyText(OptionText[LOAD], Mono, OptionRects[LOAD], "Load Map");
+    ApplyText(OptionText[SAVE], Mono, OptionRects[SAVE], "Save Current Map");
+    ApplyText(OptionText[CLEAR], Mono, OptionRects[CLEAR], "Clear Map");
+    ApplyText(OptionText[PACIFY], Mono, OptionRects[PACIFY], "Destroy Enemies");
+    ApplyText(OptionText[SUMMON], Mono, OptionRects[SUMMON], "Summon / Reset Enemies");
+    ApplyText(OptionText[QUIT], Mono, OptionRects[QUIT], "Quit Game");
     return true;
 }
 
